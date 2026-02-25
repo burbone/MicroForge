@@ -1,0 +1,434 @@
+АСИНХРОННАЯ АРХИТЕКТУРА (CompletableFuture/TaskExecutor)
+AUTHENTICATION (выбрать МИНИМУМ ОДИН, можно несколько)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Email/Password login
+├─ БД: 2 поля
+├─ Таблица: users
+├─ API: нет
+├─ Блокировка: БД запрос в отдельном thread pool (не блокирует request thread)
+└─ Изменение: CompletableFuture.supplyAsync(() -> userRepo.find(), dbExecutor)
+
+Phone/SMS login
+├─ БД: 1 + 3 поля
+├─ Таблица: users + verification_codes
+├─ API: POST /notifications/send-sms (ASYNC, не блокирует)
+└─ Изменение: SMS отправка через @Async метод
+
+Magic links
+├─ БД: 1 + 3 поля
+├─ Таблица: users + magic_tokens
+├─ API: POST /notifications/send-email (ASYNC, не блокирует)
+└─ Изменение: Email отправка через @Async метод
+
+Social login (OAuth2 Client)
+├─ БД: 0 + 3 поля
+├─ Таблица: users + social_accounts
+├─ API: OAuth2 provider (ASYNC через AsyncRestTemplate)
+└─ Изменение: OAuth запрос не блокирует request thread
+
+LDAP
+├─ БД: 1 поле
+├─ Таблица: users
+├─ API: LDAP server (блокирует, LDAP клиент не async)
+└─ Проблема: нет async LDAP клиента, нужен отдельный thread pool
+
+SAML
+├─ БД: 1 поле
+├─ Таблица: users
+├─ API: SAML IdP (блокирует, SAML не async)
+└─ Проблема: нет async SAML библиотеки, нужен отдельный thread pool
+
+WebAuthn/FIDO2
+├─ БД: 1 + 3 поля
+├─ Таблица: users + webauthn_credentials
+├─ API: нет
+└─ Изменение: криптография в отдельном thread pool
+
+Certificate-based (mTLS)
+├─ БД: 1 поле
+├─ Таблица: users
+├─ API: нет
+└─ Изменение: нет (проверка в TLS)
+
+TOKEN SYSTEM (выбрать РОВНО ОДИН)
+ВЫБРАТЬ ТОЛЬКО ЧТО-ТО ОДНО:
+
+[ ] JWT (access + refresh)
+    ├─ БД: 3 поля
+    ├─ Таблица: refresh_tokens
+    ├─ API: нет
+    └─ Изменение: генерация async, БД запрос в dbExecutor
+
+[ ] Opaque tokens
+    ├─ БД: 3 + 3 поля
+    ├─ Таблица: access_tokens + refresh_tokens
+    ├─ API: нет
+    └─ Изменение: проверка async через кеш (Redis) + fallback к БД
+
+REGISTRATION (одна фича, подфичи не взаимоисключающие)
+Basic registration
+├─ БД: 0 полей
+├─ Таблица: users
+├─ API: нет
+└─ Изменение: INSERT в dbExecutor
+
++ Email verification (опционально)
+  ├─ БД: 3 поля
+  ├─ Таблица: email_verification_tokens
+  ├─ API: POST /notifications/send-email (ASYNC, не блокирует)
+  ├─ Требует: Email поле в users
+  └─ Изменение: регистрация возвращает 200 сразу, email отправляется в фоне
+
++ Phone verification (опционально)
+  ├─ БД: 3 поля
+  ├─ Таблица: phone_verification_codes
+  ├─ API: POST /notifications/send-sms (ASYNC, не блокирует)
+  ├─ Требует: Phone поле в users
+  └─ Изменение: регистрация возвращает 200 сразу, SMS в фоне
+
+PASSWORD MANAGEMENT (зависят от Email/Password login)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Password reset
+├─ БД: 3 поля
+├─ Таблица: password_reset_tokens
+├─ API: POST /notifications/send-email или send-sms (ASYNC)
+├─ Требует: Email/Password login
+└─ Изменение: запрос возвращает 200 сразу, email/SMS в фоне
+
+Password change
+├─ БД: 0 полей
+├─ Таблица: users
+├─ API: нет
+├─ Требует: Email/Password login
+└─ Изменение: BCrypt + UPDATE в отдельном thread pool
+
+Password history
+├─ БД: 2 поля
+├─ Таблица: password_history
+├─ API: нет
+├─ Требует: Email/Password login
+└─ Изменение: INSERT в dbExecutor
+
+Password policies
+├─ БД: 0 полей
+├─ API: нет
+├─ Требует: Email/Password login
+└─ Изменение: валидация sync (быстрая)
+
+MFA (можно выбрать несколько)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+TOTP (Google Authenticator)
+├─ БД: 3 поля
+├─ Таблица: mfa_totp
+├─ API: нет
+└─ Изменение: генерация/проверка в отдельном thread pool
+
+  + Backup codes
+    ├─ БД: 3 поля
+    ├─ Таблица: mfa_backup_codes
+    ├─ Требует: TOTP
+    └─ Изменение: генерация async
+
+SMS codes
+├─ БД: 4 поля
+├─ Таблица: mfa_sms_codes
+├─ API: POST /notifications/send-sms (ASYNC)
+└─ Изменение: login возвращает 200, SMS отправляется в фоне
+
+Email codes
+├─ БД: 4 поля
+├─ Таблица: mfa_email_codes
+├─ API: POST /notifications/send-email (ASYNC)
+└─ Изменение: login возвращает 200, email в фоне
+
+Push notifications
+├─ БД: 2 + 4 поля
+├─ Таблица: mfa_push_devices + mfa_push_requests
+├─ API: POST /notifications/send-push (ASYNC)
+└─ Изменение: отправка push async, polling через WebSocket или SSE
+
+Hardware tokens (YubiKey, U2F)
+├─ БД: 3 поля
+├─ Таблица: mfa_hardware_tokens
+├─ API: нет
+└─ Изменение: криптография в отдельном thread pool
+
+AUTHORIZATION (можно RBAC, ABAC или оба)
+[ ] RBAC
+    ├─ БД: 1 + 1 + 2 + 2 поля
+    ├─ Таблица: roles + permissions + user_roles + role_permissions
+    ├─ API: нет
+    └─ Изменение: проверка прав async через кеш (Caffeine/Redis)
+
+    + Hierarchical roles
+      ├─ БД: +1 поле
+      ├─ Таблица: roles
+      ├─ Требует: RBAC
+      └─ Изменение: рекурсивный запрос в dbExecutor
+
+    + Temporal permissions
+      ├─ БД: +1 поле
+      ├─ Таблица: user_roles
+      ├─ Требует: RBAC
+      └─ Изменение: проверка async
+
+[ ] ABAC
+    ├─ БД: 3 + 5 полей
+    ├─ Таблица: user_attributes + policies
+    ├─ API: нет
+    └─ Изменение: парсинг JSON + проверка в отдельном thread pool
+
+AUDIT & SECURITY (независимые)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Audit logging
+├─ БД: 4 поля
+├─ Таблица: audit_logs
+├─ API: POST /analytics/event (ASYNC)
+└─ Изменение: запись в БД через очередь (в фоне), не блокирует запрос
+
+Rate limiting
+├─ БД: 0 полей (Redis)
+├─ Таблица: нет
+├─ API: нет
+└─ Изменение: проверка Redis async (Lettuce client)
+
+Account lockout
+├─ БД: +2 поля в users
+├─ Таблица: users
+├─ API: нет
+├─ Требует: Email/Password login
+└─ Изменение: UPDATE в dbExecutor
+
+Login history
+├─ БД: 3 поля
+├─ Таблица: login_history
+├─ API: нет
+└─ Изменение: INSERT через @Async (в фоне)
+
+Login notifications
+├─ БД: 0 полей
+├─ Таблица: нет
+├─ API: POST /notifications/send-email или send-sms (ASYNC)
+├─ Требует: Login history
+└─ Изменение: отправка полностью в фоне, login не ждёт
+
+IP whitelisting/blacklisting
+├─ БД: 3 поля
+├─ Таблица: ip_rules
+├─ API: нет
+└─ Изменение: проверка через кеш (async)
+
+Device fingerprinting
+├─ БД: 4 поля
+├─ Таблица: devices
+├─ API: нет
+└─ Изменение: SELECT + INSERT в dbExecutor
+
+Suspicious activity detection
+├─ БД: 5 полей
+├─ Таблица: security_alerts
+├─ API: POST /analytics/fraud-detection (ASYNC)
+├─ Требует: Audit logging
+└─ Изменение: анализ полностью в фоне через очередь
+
+ACCOUNT MANAGEMENT (независимые)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+User profile CRUD
+├─ БД: 0 полей
+├─ Таблица: users
+├─ API: POST /storage/upload (ASYNC)
+└─ Изменение: загрузка файла не блокирует, UPDATE в dbExecutor
+
+Account deletion
+├─ БД: 0 или +1 поля
+├─ Таблица: users
+├─ API: POST /notifications/send-email (ASYNC)
+├─ Требует: User profile
+└─ Изменение: DELETE/UPDATE в dbExecutor, email в фоне
+
+Logout
+├─ БД: +1 поле
+├─ Таблица: refresh_tokens или access_tokens
+├─ API: нет
+├─ Требует: TOKEN SYSTEM
+└─ Изменение: UPDATE в dbExecutor
+
+Token blacklist
+├─ БД: 2 поля
+├─ Таблица: token_blacklist
+├─ API: нет
+├─ Требует: TOKEN SYSTEM
+└─ Изменение: INSERT в Redis async + fallback БД
+
+Session management
+├─ БД: 5 полей
+├─ Таблица: sessions
+├─ API: нет
+└─ Изменение: SELECT + UPDATE в dbExecutor, можно кеш
+
+Remember me
+├─ БД: 3 поля
+├─ Таблица: remember_me_tokens
+├─ API: нет
+└─ Изменение: INSERT + SELECT в dbExecutor
+
+Account merging
+├─ БД: 0 полей
+├─ Таблица: нет
+├─ API: нет
+├─ Требует: Social login
+└─ Изменение: UPDATE в dbExecutor
+
+ADMIN PANEL (группа зависимых)
+Admin API
+├─ БД: 0 полей
+├─ Таблица: нет
+├─ API: нет
+├─ Требует: RBAC
+└─ Изменение: все операции через dbExecutor
+
+  User management
+  ├─ БД: 0 полей
+  ├─ Требует: Admin API
+  └─ Изменение: CRUD async
+
+  Role & permission management
+  ├─ БД: 0 полей
+  ├─ Требует: Admin API + RBAC
+  └─ Изменение: CRUD async
+
+  System configuration
+  ├─ БД: 3 поля
+  ├─ Таблица: system_config
+  ├─ Требует: Admin API
+  └─ Изменение: SELECT + UPDATE async
+
+  User impersonation
+  ├─ БД: 4 поля
+  ├─ Таблица: impersonation_logs
+  ├─ Требует: Admin API + Audit logging
+  └─ Изменение: INSERT async
+
+OAUTH2 AUTHORIZATION SERVER (отдельная ветка)
+КОНФЛИКТ: странно с Social login
+
+OAuth2 Server
+├─ БД: 4 + 4 + 5 полей
+├─ Таблица: oauth_clients + oauth_authorization_codes + oauth_access_tokens
+├─ API: нет
+├─ Требует: AUTHENTICATION + TOKEN SYSTEM
+└─ Изменение: все БД операции в dbExecutor
+
+  Scopes
+  ├─ БД: 2 поля
+  ├─ Таблица: oauth_scopes
+  ├─ Требует: OAuth2 Server
+  └─ Изменение: SELECT async
+
+  Token introspection
+  ├─ БД: 0 полей
+  ├─ Требует: OAuth2 Server
+  └─ Изменение: SELECT async (с кешем)
+
+  Token revocation
+  ├─ БД: +1 поле
+  ├─ Таблица: oauth_access_tokens
+  ├─ Требует: OAuth2 Server
+  └─ Изменение: UPDATE async
+
+MULTI-TENANCY (модифицирует ВСЁ)
+Multi-tenancy
+├─ БД: 2 поля + tenant_id везде
+├─ Таблица: tenants + модификация ВСЕХ таблиц
+├─ API: нет
+└─ Изменение: все запросы включают WHERE tenant_id (async)
+
+  Tenant isolation
+  ├─ БД: 0 полей
+  ├─ Требует: Multi-tenancy
+  └─ Изменение: фильтр на уровне SQL
+
+  Tenant provisioning
+  ├─ БД: +2 поля
+  ├─ Таблица: tenants
+  ├─ Требует: Multi-tenancy
+  └─ Изменение: создание tenant async (долгая операция)
+
+INTEGRATIONS & EVENTS (независимые)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Event publishing (Kafka/RabbitMQ)
+├─ БД: 0 полей
+├─ API: Kafka/RabbitMQ broker (ASYNC)
+└─ Изменение: KafkaTemplate.send() возвращает CompletableFuture
+
+Webhooks (outgoing)
+├─ БД: 5 полей
+├─ Таблица: webhooks
+├─ API: HTTP POST (ASYNC через AsyncRestTemplate)
+└─ Изменение: HTTP вызовы не блокируют запрос
+
+Webhooks (incoming)
+├─ БД: 4 поля
+├─ Таблица: webhook_logs
+├─ API: нет
+└─ Изменение: INSERT в dbExecutor
+
+Analytics integration
+├─ БД: 0 полей
+├─ API: POST /analytics/track-event (ASYNC)
+├─ Требует: Audit logging
+└─ Изменение: отправка полностью в фоне
+
+COMPLIANCE & LEGAL (независимые)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+GDPR
+├─ БД: 3 поля
+├─ Таблица: consent_records
+├─ API: нет
+├─ Требует: User profile
+└─ Изменение: INSERT в dbExecutor
+
+Data export
+├─ БД: 4 поля
+├─ Таблица: export_requests
+├─ API: POST /storage/upload (ASYNC)
+├─ Требует: User profile
+└─ Изменение: генерация архива полностью async (очередь)
+
+Terms of Service tracking
+├─ БД: 3 поля
+├─ Таблица: tos_acceptances
+├─ API: нет
+├─ Требует: User profile
+└─ Изменение: INSERT в dbExecutor
+
+Age verification
+├─ БД: +1 поле
+├─ Таблица: users
+├─ API: нет
+├─ Требует: Registration
+└─ Изменение: валидация sync (быстрая)
+
+РЕЗЮМЕ ПО АСИНХРОННОЙ АРХИТЕКТУРЕ
+Взаимоисключающие: (те же что в синхронной)
+
+TOKEN SYSTEM: JWT ИЛИ Opaque
+
+Зависимости: (те же что в синхронной)
+Главные изменения:
+
+✅ Email/SMS отправка НЕ блокирует запрос (через @Async)
+✅ Push notifications НЕ блокируют
+✅ Webhooks outgoing НЕ блокируют (AsyncRestTemplate)
+✅ Data export генерируется в фоне
+✅ Audit logging пишет в очередь
+✅ Login notifications полностью в фоне
+⚠️ БД вызовы всё равно блокирующие (JDBC не async)
+⚠️ LDAP/SAML всё равно блокируют (нет async клиентов)

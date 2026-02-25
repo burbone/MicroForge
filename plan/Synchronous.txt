@@ -1,0 +1,1044 @@
+СИНХРОННАЯ АРХИТЕКТУРА AUTH-МИКРОСЕРВИСА
+===========================================
+
+AUTHENTICATION (выбрать МИНИМУМ ОДИН, можно несколько)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ (не взаимоисключающие)
+
+Email/Password login
+├─ БД: 2 + 5 поля
+└─ API: нет
+
+Phone/SMS login
+├─ БД: 1 + 4 поля
+└─ API: POST /notifications-service/send-sms, POST /notifications-service/verify-sms
+
+Magic links
+├─ БД: 1 + 3 поля
+└─ API: POST /notifications-service/send-magic-link, POST /notifications-service/verify-magic-link
+
+Social login (OAuth2 Client)
+├─ БД: 3 + 8 поля
+└─ API: OAuth2 provider (Google/Facebook/GitHub)
+
+LDAP
+├─ БД: 1 + 2 поля
+└─ API: LDAP server
+
+SAML
+├─ БД: 1 + 3 поля
+└─ API: SAML IdP
+
+WebAuthn/FIDO2
+├─ БД: 3 + 5 поля
+└─ API: нет
+
+Certificate-based (mTLS)
+├─ БД: 1 + 3 поля
+└─ API: нет
+
+PIN/Pattern login
+├─ БД: 1 + 4 поля
+└─ API: нет
+
+Passwordless authentication
+├─ БД: 1 + 3 поля
+└─ API: POST /notifications-service/send-passwordless, POST /notifications-service/verify-passwordless
+
+Biometric authentication
+├─ БД: 3 + 4 поля
+└─ API: нет
+
+Anonymous authentication
+├─ БД: 1 + 2 поля
+└─ API: нет
+
+API Key authentication
+├─ БД: 2 + 5 поля
+└─ API: нет
+
+Bearer token authentication
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+Basic Auth support
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+TOKEN SYSTEM (выбрать РОВНО ОДИН, взаимоисключающие)
+ВЫБРАТЬ ТОЛЬКО ЧТО-ТО ОДНО:
+
+JWT (access + refresh)
+├─ БД: 3 + 3 поля
+└─ API: нет
+
+Opaque tokens
+├─ БД: 6 + 5 поля
+└─ API: нет
+
+TOKEN FEATURES (применяются к выбранному TOKEN SYSTEM)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Token rotation
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+Token family tracking
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: JWT
+
+Sliding sessions
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Session management
+
+Concurrent session limits
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Session management
+
+Token scopes
+├─ БД: 3 + 2 поля
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+Refresh token reuse detection
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: JWT
+
+Token binding
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+JWT claims validation
+├─ БД: 3 + 2 поля
+└─ API: нет
+└─ Требует: JWT
+
+REGISTRATION (одна фича, подфичи не взаимоисключающие)
+
+Basic registration
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Email verification
+├─ БД: +2 поля
+└─ API: POST /notifications-service/send-verification-email, POST /notifications-service/verify-email
+└─ Требует: Email поле
+
+Phone verification
+├─ БД: +2 поля
+└─ API: POST /notifications-service/send-verification-sms, POST /notifications-service/verify-phone
+└─ Требует: Phone поле
+
+Invite-only registration
+├─ БД: 4 + 4 поля
+└─ API: нет
+
+Registration approval workflow
+├─ БД: +2 поля
+└─ API: POST /notifications-service/send-approval-notification
+
+PASSWORD MANAGEMENT (группа фич, зависят от Email/Password login)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Password reset
+├─ БД: 0 + 0 поля
+└─ API: POST /notifications-service/send-password-reset, POST /notifications-service/verify-password-reset
+└─ Требует: Email/Password login
+
+Password change
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+Password history
+├─ БД: 2 + 2 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+Password policies
+├─ БД: 5 + 3 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+Password strength meter
+├─ БД: 0 + 0 поля
+└─ API: GET /password-strength-service/check
+└─ Требует: Email/Password login
+
+Compromised password check
+├─ БД: 0 + 0 поля
+└─ API: GET /haveibeenpwned-api/range
+└─ Требует: Email/Password login
+
+Password expiration
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+Force password change
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Email/Password login
+
+Password blacklist
+├─ БД: 2 + 2 поля
+├─ КЕШ: 1 + 0 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+Hash migration
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Email/Password login
+
+MFA (группа фич, можно выбрать несколько)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+TOTP (Google Authenticator)
+├─ БД: 3 + 4 поля
+└─ API: нет
+
+Backup codes
+├─ БД: 3 + 2 поля
+└─ API: нет
+└─ Требует: TOTP
+
+SMS codes
+├─ БД: 0 + 0 поля
+└─ API: POST /notifications-service/send-mfa-sms, POST /notifications-service/verify-mfa-sms
+
+Email codes
+├─ БД: 0 + 0 поля
+└─ API: POST /notifications-service/send-mfa-email, POST /notifications-service/verify-mfa-email
+
+Push notifications
+├─ БД: 2 + 3 поля
+└─ API: POST /notifications-service/send-mfa-push, POST /notifications-service/verify-mfa-push
+
+Hardware tokens (YubiKey, U2F)
+├─ БД: 3 + 4 поля
+└─ API: нет
+
+Security questions
+├─ БД: 4 + 3 поля
+└─ API: нет
+
+MFA enforcement policies
+├─ БД: 3 + 3 поля
+└─ API: нет
+└─ Требует: любой MFA
+
+MFA trusted IPs
+├─ БД: 3 + 3 поля
+└─ API: нет
+└─ Требует: любой MFA
+
+MFA grace period
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: любой MFA
+
+Step-up authentication
+├─ БД: 4 + 3 поля
+└─ API: нет
+└─ Требует: любой MFA
+
+Adaptive MFA
+├─ БД: 5 + 4 поля
+└─ API: POST /fraud-service/calculate-risk
+└─ Требует: любой MFA
+
+AUTHORIZATION (выбрать ОДИН тип ИЛИ оба вместе)
+
+RBAC
+├─ БД: 8 + 6 поля
+└─ API: нет
+
+Hierarchical roles
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: RBAC
+
+Temporal permissions
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: RBAC
+
+Permission delegation
+├─ БД: 4 + 4 поля
+└─ API: нет
+└─ Требует: RBAC
+
+Resource-based permissions
+├─ БД: 4 + 3 поля
+└─ API: нет
+└─ Требует: RBAC
+
+Conditional permissions
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: RBAC
+
+Permission inheritance
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: Resource-based permissions
+
+Group-based permissions
+├─ БД: 7 + 5 поля
+└─ API: нет
+└─ Требует: RBAC
+
+Time-based access control
+├─ БД: +4 поля
+└─ API: нет
+└─ Требует: RBAC
+
+ABAC
+├─ БД: 8 + 6 поля
+└─ API: нет
+
+Tag-based permissions
+├─ БД: 5 + 3 поля
+└─ API: нет
+└─ Требует: ABAC
+
+Location-based access control
+├─ БД: +3 поля
+└─ API: GET /geo-service/lookup
+└─ Требует: ABAC
+
+Permission caching
+├─ БД: 0 + 0 поля
+├─ КЕШ: 3 + 2 поля
+└─ API: нет
+└─ Требует: RBAC или ABAC
+
+AUDIT & SECURITY (независимые фичи)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+Audit logging
+├─ БД: 4 + 6 поля
+└─ API: POST /analytics-service/track-event
+
+Rate limiting
+├─ БД: 0 + 0 поля
+├─ КЕШ: 3 + 2 поля
+└─ API: нет
+
+Account lockout
+├─ БД: +3 поля
+└─ API: нет
+└─ Требует: Email/Password login
+
+Login history
+├─ БД: 3 + 7 поля
+└─ API: нет
+
+Failed login tracking
+├─ БД: 3 + 5 поля
+└─ API: нет
+└─ Требует: Login history
+
+Login notifications
+├─ БД: 0 + 0 поля
+└─ API: POST /notifications-service/send-login-notification
+└─ Требует: Login history
+
+IP whitelisting/blacklisting
+├─ БД: 3 + 4 поля
+├─ КЕШ: 2 + 1 поля
+└─ API: нет
+
+Device fingerprinting
+├─ БД: 4 + 5 поля
+└─ API: нет
+
+Trusted devices
+├─ БД: 5 + 4 поля
+└─ API: нет
+└─ Требует: Device fingerprinting
+
+Suspicious activity detection
+├─ БД: 5 + 5 поля
+└─ API: POST /fraud-service/analyze-activity
+└─ Требует: Audit logging
+
+Risk scoring engine
+├─ БД: 5 + 4 поля
+└─ API: POST /fraud-service/calculate-risk, GET /geo-service/lookup
+
+Anomaly detection
+├─ БД: 0 + 0 поля
+└─ API: POST /ml-service/detect-anomalies
+└─ Требует: Audit logging
+
+Geolocation tracking
+├─ БД: +4 поля
+├─ КЕШ: 2 + 1 поля
+└─ API: GET /geo-service/lookup
+└─ Требует: Login history
+
+User agent parsing
+├─ БД: +4 поля
+└─ API: нет
+└─ Требует: Login history или Device fingerprinting
+
+Concurrent login prevention
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Session management
+
+Brute force detection
+├─ БД: 4 + 4 поля
+├─ КЕШ: 3 + 1 поля
+└─ API: нет
+
+Credential stuffing detection
+├─ БД: 3 + 3 поля
+└─ API: нет
+
+Session hijacking detection
+├─ БД: +3 поля
+└─ API: нет
+└─ Требует: Session management + Device fingerprinting
+
+Compliance reports
+├─ БД: 0 + 0 поля
+└─ API: POST /reporting-service/generate
+└─ Требует: Audit logging
+
+Real-time security dashboard
+├─ БД: 0 + 0 поля
+└─ API: POST /analytics-service/get-metrics
+└─ Требует: Audit logging
+
+ACCOUNT MANAGEMENT (независимые фичи)
+МОЖНО ВЫБРАТЬ ЛЮБУЮ КОМБИНАЦИЮ
+
+User profile CRUD
+├─ БД: 0 + N поля
+└─ API: POST /storage-service/upload
+
+Account deletion
+├─ БД: +2 поля
+└─ API: POST /notifications-service/send-deletion-notification, POST /analytics-service/track-event
+└─ Требует: User profile
+
+Account suspension
+├─ БД: +3 поля
+└─ API: POST /notifications-service/send-suspension-notification
+
+Account archival
+├─ БД: +2 поля
+└─ API: POST /storage-service/archive
+└─ Требует: Account deletion
+
+Account verification levels
+├─ БД: +2 поля
+└─ API: POST /kyc-service/verify
+
+Account recovery workflow
+├─ БД: 4 + 4 поля
+└─ API: POST /notifications-service/send-recovery-email
+
+Logout
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+Logout all devices
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+Token blacklist
+├─ БД: 2 + 3 поля
+├─ КЕШ: 2 + 1 поля
+└─ API: нет
+└─ Требует: TOKEN SYSTEM
+
+Session management
+├─ БД: 5 + 6 поля
+└─ API: нет
+
+Remember me
+├─ БД: 3 + 3 поля
+└─ API: нет
+
+Account merging
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Social login
+
+User preferences
+├─ БД: 2 + 2 поля
+└─ API: нет
+
+User metadata
+├─ БД: 2 + 2 поля
+└─ API: нет
+
+Email change workflow
+├─ БД: 4 + 3 поля
+└─ API: POST /notifications-service/send-email-change-verification
+└─ Требует: Email/Password login
+
+Phone change workflow
+├─ БД: 4 + 3 поля
+└─ API: POST /notifications-service/send-phone-change-verification
+└─ Требует: Phone/SMS login
+
+Username uniqueness check
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Email uniqueness check
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Profile visibility controls
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: User profile
+
+ADMIN PANEL (группа зависимых фич)
+
+Admin API
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: RBAC
+
+User management
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API
+
+Role & permission management
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API + RBAC
+
+System configuration
+├─ БД: 3 + 3 поля
+└─ API: нет
+└─ Требует: Admin API
+
+User impersonation
+├─ БД: 4 + 4 поля
+└─ API: нет
+└─ Требует: Admin API + Audit logging
+
+Bulk operations
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API
+
+Advanced search/filtering
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API
+
+Audit log search
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API + Audit logging
+
+User activity timeline
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API + Audit logging
+
+Manual user verification
+├─ БД: +2 поля
+└─ API: POST /notifications-service/send-verification-notification
+└─ Требует: Admin API
+
+Ban/unban users
+├─ БД: +3 поля
+└─ API: POST /notifications-service/send-ban-notification
+└─ Требует: Admin API
+
+Role templates
+├─ БД: 3 + 3 поля
+└─ API: нет
+└─ Требует: Admin API + RBAC
+
+Permission matrix view
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Admin API + RBAC
+
+OAUTH2 AUTHORIZATION SERVER (отдельная ветка)
+
+OAuth2 Server
+├─ БД: 13 + 10 поля
+└─ API: нет
+└─ Требует: любой AUTHENTICATION + TOKEN SYSTEM
+
+Scopes
+├─ БД: 2 + 3 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Token introspection
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Token revocation
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+PKCE support
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Client credentials grant
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Device authorization grant
+├─ БД: 5 + 5 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Dynamic client registration
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Client secret rotation
+├─ БД: +2 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Consent management
+├─ БД: 4 + 3 поля
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+Authorization code expiration
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: OAuth2 Server
+
+MULTI-TENANCY (специальная фича, модифицирует ВСЁ)
+
+Multi-tenancy
+├─ БД: 2 + 5 поля в tenants
+├─ БД: +1 поле (tenant_id) в КАЖДОЙ таблице
+└─ API: нет
+
+Tenant isolation
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Multi-tenancy
+
+Tenant provisioning
+├─ БД: +2 поля
+└─ API: POST /provisioning-service/create-tenant
+└─ Требует: Multi-tenancy
+
+Tenant quotas/limits
+├─ БД: +5 полей
+└─ API: нет
+└─ Требует: Multi-tenancy
+
+Tenant feature flags
+├─ БД: 2 + 2 поля
+├─ КЕШ: 2 + 1 поля
+└─ API: нет
+└─ Требует: Multi-tenancy
+
+Cross-tenant user lookup
+├─ БД: 0 + 0 поля
+└─ API: нет
+└─ Требует: Multi-tenancy
+
+Tenant switching
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Multi-tenancy
+
+Tenant invite codes
+├─ БД: 4 + 5 поля
+└─ API: POST /notifications-service/send-tenant-invite
+└─ Требует: Multi-tenancy
+
+Tenant analytics
+├─ БД: 0 + 0 поля
+└─ API: POST /analytics-service/get-metrics
+└─ Требует: Multi-tenancy + Audit logging
+
+Custom domains per tenant
+├─ БД: 3 + 4 поля
+└─ API: POST /dns-service/verify-domain
+└─ Требует: Multi-tenancy
+
+Tenant branding
+├─ БД: 5 + 3 поля
+└─ API: GET /storage-service/get-file
+└─ Требует: Multi-tenancy
+
+INTEGRATIONS & EVENTS (независимые фичи)
+
+Event publishing
+├─ БД: 0 + 0 поля
+└─ API: POST /message-queue-service/publish
+
+Webhooks (outgoing)
+├─ БД: 5 + 5 поля
+└─ API: HTTP POST к клиентам
+
+Webhooks (incoming)
+├─ БД: 4 + 5 поля
+└─ API: нет
+
+Analytics integration
+├─ БД: 0 + 0 поля
+└─ API: POST /analytics-service/track-event
+└─ Требует: Audit logging
+
+COMPLIANCE & LEGAL (независимые фичи)
+
+GDPR
+├─ БД: 3 + 3 поля
+└─ API: нет
+└─ Требует: User profile
+
+Data export
+├─ БД: 4 + 5 поля
+└─ API: POST /storage-service/upload, POST /export-service/generate
+└─ Требует: User profile
+
+Terms of Service tracking
+├─ БД: 3 + 2 поля
+└─ API: нет
+└─ Требует: User profile
+
+Age verification
+├─ БД: +2 поля
+└─ API: POST /kyc-service/verify-age
+└─ Требует: Registration
+
+Privacy settings management
+├─ БД: 2 + 2 поля
+└─ API: нет
+└─ Требует: User profile
+
+Data retention policies
+├─ БД: 3 + 3 поля
+└─ API: нет
+
+VALIDATION & CONSTRAINTS
+
+Custom validation rules
+├─ БД: 3 + 3 поля
+└─ API: нет
+
+Field-level encryption
+├─ БД: 0 + 0 поля
+└─ API: GET /kms-service/encrypt, GET /kms-service/decrypt
+
+Data masking
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Input sanitization
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Request signing
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+DATABASE & PERFORMANCE
+
+Read replicas support
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Database sharding metadata
+├─ БД: 2 + 2 поля
+└─ API: нет
+└─ Требует: Multi-tenancy
+
+Query result pagination
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Optimistic locking
+├─ БД: +1 поле per table
+└─ API: нет
+
+Pessimistic locking
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+CRYPTOGRAPHY & HASHING
+
+Password hashing strategies
+├─ БД: +1 поле
+└─ API: нет
+└─ Требует: Email/Password login
+
+Key rotation logic
+├─ БД: 3 + 3 поля
+└─ API: GET /kms-service/rotate
+
+HMAC signature verification
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+Random token generation
+├─ БД: 0 + 0 поля
+└─ API: нет
+
+ENTERPRISE FEATURES
+
+SSO (Single Sign-On)
+├─ БД: 4 + 5 поля
+└─ API: SAML/OAuth2 providers
+└─ Требует: SAML или Social login
+
+Directory sync (SCIM)
+├─ БД: 5 + 6 поля
+└─ API: LDAP/AD sync
+└─ Требует: LDAP
+
+Service accounts
+├─ БД: 4 + 5 поля
+└─ API: нет
+└─ Требует: OAuth2 Server или API Key authentication
+
+===========================================
+ЗАВИСИМОСТИ ФИЧЕЙ
+===========================================
+
+AUTHENTICATION:
+- Все фичи → требуют минимум ОДИН метод аутентификации
+
+TOKEN SYSTEM:
+- Logout → требует TOKEN SYSTEM
+- Logout all devices → требует TOKEN SYSTEM
+- Token blacklist → требует TOKEN SYSTEM
+- Token rotation → требует TOKEN SYSTEM
+- Token family tracking → требует JWT
+- Token scopes → требует TOKEN SYSTEM
+- Refresh token reuse detection → требует JWT
+- Token binding → требует TOKEN SYSTEM
+- JWT claims validation → требует JWT
+- Bearer token authentication → требует TOKEN SYSTEM
+- Remember me → требует TOKEN SYSTEM
+- Session management → может использовать TOKEN SYSTEM
+- Concurrent session limits → требует Session management
+- Sliding sessions → требует Session management
+
+REGISTRATION:
+- Email verification → требует Email поле
+- Phone verification → требует Phone поле
+- Age verification → требует Registration
+
+PASSWORD MANAGEMENT:
+- Password reset → требует Email/Password login
+- Password change → требует Email/Password login
+- Password history → требует Email/Password login
+- Password policies → требует Email/Password login
+- Password strength meter → требует Email/Password login
+- Compromised password check → требует Email/Password login
+- Password expiration → требует Email/Password login
+- Force password change → требует Email/Password login
+- Password blacklist → требует Email/Password login
+- Hash migration → требует Email/Password login
+- Password hashing strategies → требует Email/Password login
+- Basic Auth support → требует Email/Password login
+
+MFA:
+- Backup codes → требует TOTP
+- MFA enforcement policies → требует любой MFA
+- MFA trusted IPs → требует любой MFA
+- MFA grace period → требует любой MFA
+- Step-up authentication → требует любой MFA
+- Adaptive MFA → требует любой MFA
+
+AUTHORIZATION:
+- Hierarchical roles → требует RBAC
+- Temporal permissions → требует RBAC
+- Permission delegation → требует RBAC
+- Resource-based permissions → требует RBAC
+- Conditional permissions → требует RBAC
+- Permission inheritance → требует Resource-based permissions
+- Group-based permissions → требует RBAC
+- Time-based access control → требует RBAC
+- Tag-based permissions → требует ABAC
+- Location-based access control → требует ABAC
+- Permission caching → требует RBAC или ABAC
+
+AUDIT & SECURITY:
+- Failed login tracking → требует Login history
+- Login notifications → требует Login history
+- Suspicious activity detection → требует Audit logging
+- Anomaly detection → требует Audit logging
+- Geolocation tracking → требует Login history
+- User agent parsing → требует Login history или Device fingerprinting
+- Concurrent login prevention → требует Session management
+- Trusted devices → требует Device fingerprinting
+- Session hijacking detection → требует Session management + Device fingerprinting
+- Compliance reports → требует Audit logging
+- Real-time security dashboard → требует Audit logging
+- Analytics integration → требует Audit logging
+- Account lockout → требует Email/Password login
+
+ACCOUNT MANAGEMENT:
+- Account deletion → требует User profile
+- Account archival → требует Account deletion
+- Account merging → требует Social login
+- Profile visibility controls → требует User profile
+- Email change workflow → требует Email/Password login
+- Phone change workflow → требует Phone/SMS login
+
+ADMIN PANEL:
+- Admin API → требует RBAC
+- User management → требует Admin API
+- Role & permission management → требует Admin API + RBAC
+- System configuration → требует Admin API
+- User impersonation → требует Admin API + Audit logging
+- Bulk operations → требует Admin API
+- Advanced search/filtering → требует Admin API
+- Audit log search → требует Admin API + Audit logging
+- User activity timeline → требует Admin API + Audit logging
+- Manual user verification → требует Admin API
+- Ban/unban users → требует Admin API
+- Role templates → требует Admin API + RBAC
+- Permission matrix view → требует Admin API + RBAC
+
+OAUTH2 SERVER:
+- OAuth2 Server → требует любой AUTHENTICATION + TOKEN SYSTEM
+- Scopes → требует OAuth2 Server
+- Token introspection → требует OAuth2 Server
+- Token revocation → требует OAuth2 Server
+- PKCE support → требует OAuth2 Server
+- Client credentials grant → требует OAuth2 Server
+- Device authorization grant → требует OAuth2 Server
+- Dynamic client registration → требует OAuth2 Server
+- Client secret rotation → требует OAuth2 Server
+- Consent management → требует OAuth2 Server
+- Authorization code expiration → требует OAuth2 Server
+- Service accounts → требует OAuth2 Server или API Key authentication
+
+MULTI-TENANCY:
+- Tenant isolation → требует Multi-tenancy
+- Tenant provisioning → требует Multi-tenancy
+- Tenant quotas/limits → требует Multi-tenancy
+- Tenant feature flags → требует Multi-tenancy
+- Cross-tenant user lookup → требует Multi-tenancy
+- Tenant switching → требует Multi-tenancy
+- Tenant invite codes → требует Multi-tenancy
+- Tenant analytics → требует Multi-tenancy + Audit logging
+- Custom domains per tenant → требует Multi-tenancy
+- Tenant branding → требует Multi-tenancy
+- Database sharding metadata → требует Multi-tenancy
+
+COMPLIANCE:
+- GDPR → требует User profile
+- Data export → требует User profile
+- Terms of Service tracking → требует User profile
+- Privacy settings management → требует User profile
+
+ENTERPRISE:
+- SSO → требует SAML или Social login
+- Directory sync (SCIM) → требует LDAP
+
+===========================================
+ВЗАИМОИСКЛЮЧЕНИЯ И КОНФЛИКТЫ
+===========================================
+
+ВЗАИМОИСКЛЮЧАЮЩИЕ (выбрать ТОЛЬКО ОДНО):
+- TOKEN SYSTEM: JWT ИЛИ Opaque
+
+SOFT КОНФЛИКТЫ (можно вместе, но редко):
+- LDAP обычно вместо Email/Password
+- SAML обычно вместо Email/Password
+- OAuth2 Server + Social login (странно быть клиентом и сервером)
+
+КОМБИНИРУЕМЫЕ (можно любые):
+- AUTHENTICATION: можно несколько методов
+- MFA: можно несколько типов
+- AUTHORIZATION: можно RBAC + ABAC
+- PASSWORD MANAGEMENT: любые комбинации
+- AUDIT & SECURITY: любые комбинации
+- ACCOUNT MANAGEMENT: любые комбинации
+- COMPLIANCE: любые комбинации
+
+===========================================
+ВНЕШНИЕ МИКРОСЕРВИСЫ
+===========================================
+
+NOTIFICATIONS-SERVICE:
+- send-email, send-sms, send-push
+- verify-email, verify-sms, verify-push
+- send-magic-link, send-passwordless
+- send-password-reset, send-mfa-*
+- send-login-notification, send-ban-notification
+
+STORAGE-SERVICE:
+- upload, get-file, delete, archive
+
+ANALYTICS-SERVICE:
+- track-event, get-metrics
+
+FRAUD-SERVICE:
+- analyze-activity, calculate-risk
+
+GEO-SERVICE:
+- lookup (IP to location)
+
+KYC-SERVICE:
+- verify-age, verify-identity
+
+KMS-SERVICE:
+- encrypt, decrypt, rotate
+
+EXPORT-SERVICE:
+- generate (data export archives)
+
+PROVISIONING-SERVICE:
+- create-tenant
+
+DNS-SERVICE:
+- verify-domain
+
+MESSAGE-QUEUE-SERVICE:
+- publish (Kafka/RabbitMQ)
+
+PASSWORD-STRENGTH-SERVICE:
+- check
+
+HAVEIBEENPWNED-API:
+- range (compromised passwords)
+
+OAUTH2 PROVIDERS:
+- Google, Facebook, GitHub
+
+LDAP SERVER:
+- LDAP protocol
+
+SAML IDP:
+- SAML protocol
+
+REPORTING-SERVICE:
+- generate (compliance reports)
+
+ML-SERVICE:
+- detect-anomalies

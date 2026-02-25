@@ -1,0 +1,1698 @@
+ROOT
+├── leftPanel
+│   ├── project
+│   ├── architecture
+│   └── infrastructure
+├── midPanel
+│   └── selectedFeatures[]
+├── diagram
+│   ├── database
+│   │   └── tables[]
+│   │       └── fields[]
+│   ├── cache
+│   │   └── keys{}
+│   └── features{}
+│       └── [group]
+│           └── [featureId]
+│               ├── usedColumns{}
+│               └── children{}
+│                   └── [childId]
+│                       └── usedColumns{}
+└── externalServices[]
+
+
+{
+  "leftPanel": {
+    "serviceType": "auth",
+    "project": {
+      "group": "com.example",
+      "artifact": "auth-service",
+      "name": "Auth Service",
+      "description": "Full-featured authentication microservice",
+      "package": "com.example.authservice"
+    },
+    "architecture": {
+      "model": "synchronous",
+      "build": "maven"
+    },
+    "infrastructure": {
+      "databaseEnabled": true,
+      "database": "postgresql",
+      "cacheEnabled": true,
+      "cache": "redis"
+    }
+  },
+
+  "midPanel": {
+    "selectedFeatures": [
+      "email-password-login",
+      "rate-limiting",
+      "ip-whitelisting"
+    ]
+  },
+
+  "diagram": {
+
+    "database": {
+      "type": "postgresql",
+      "tables": [
+        {
+          "name": "users",
+          "fields": [
+
+            {
+              "name": "id",
+              "type": "BIGINT",
+              "nullable": false,
+              "primaryKey": true,
+              "autoIncrement": true
+            },
+
+            {
+              "name": "email",
+              "type": "VARCHAR",
+              "size": 255,
+              "nullable": false,
+              "unique": true,
+              "default": null,
+              "comment": "Unique user email used for login",
+              "isArray": false,
+              "check": "email LIKE '%@%'",
+              "index": {
+                "type": "BTREE",
+                "unique": true
+              },
+              "foreignKey": {
+                "table": "tenants",
+                "column": "id",
+                "onDelete": "CASCADE",
+                "onUpdate": "NO ACTION"
+              }
+            },
+
+            {
+              "name": "score",
+              "type": "DECIMAL",
+              "precision": 10,
+              "scale": 2,
+              "nullable": true,
+              "default": 0.00
+            }
+
+          ]
+        }
+      ]
+    },
+
+    "cache": {
+      "type": "redis",
+
+      "settings": {
+        "maxMemory": "256mb",
+        "evictionPolicy": "allkeys-lru"
+      },
+
+      "keys": {
+
+        "redis": [
+          {
+            "pattern": "session:{userId}",
+            "type": "Hash",
+            "ttl": 3600,
+            "expireStrategy": "sliding",
+            "serialization": "json",
+            "compression": "gzip",
+            "eviction": "volatile-lru",
+            "pinned": false,
+            "prettyJson": false,
+            "hashFields": ["userId", "role", "ip"],
+            "scoreField": null
+          },
+          {
+            "pattern": "leaderboard:{tenantId}",
+            "type": "Sorted Set",
+            "ttl": 86400,
+            "expireStrategy": "On Write",
+            "scoreField": "rating"
+          }
+        ],
+
+        "inMemory": [
+          {
+            "name": "userCache",
+            "ttl": 600
+          }
+        ],
+
+        "caffeine": [
+          {
+            "name": "permissionCache",
+            "maxSize": 5000,
+            "expireAfterWrite": 300,
+            "expireAfterAccess": 120,
+            "refreshAfterWrite": 60,
+            "weakKeys": false,
+            "weakValues": false,
+            "recordStats": true
+          }
+        ]
+
+      }
+    },
+
+    "features": {
+
+      "authentication": {
+        "email-password-login": {
+          "usedColumns": {
+            "users": ["email", "password_hash"]
+          }
+        }
+      },
+
+      "audit-security": {
+
+        "rate-limiting": {
+          "usedCacheKeys": [
+            "rate_limit:user:{userId}",
+            "rate_limit:ip:{ip}"
+          ]
+        },
+
+        "ip-whitelisting": {
+          "usedColumns": {
+            "ip_rules": ["ip_address", "rule_type", "created_by"]
+          },
+          "usedCacheKeys": [
+            "ip:whitelist:{ip}",
+            "ip:blacklist:{ip}"
+          ],
+          "children": {
+            "some-child-feature": {
+              "usedColumns": {
+                "ip_rules": ["expires_at"]
+              },
+              "usedCacheKeys": [
+                "ip:rules:user:{userId}"
+              ]
+            }
+          }
+        }
+
+      }
+
+    }
+  },
+
+  "externalServices": [
+    {
+      "id": "notifications-service",
+      "name": "Notifications",
+      "endpoints": [
+        "POST /notifications-service/send-sms",
+        "POST /notifications-service/verify-sms"
+      ]
+    }
+  ]
+
+}
+
+
+
+{
+  "leftPanel": {
+    "serviceType": "auth",
+    "project": {
+      "group": "com.example",
+      "artifact": "auth-service",
+      "name": "Auth Service",
+      "description": "Full-featured authentication and authorization microservice",
+      "package": "com.example.authservice"
+    },
+    "architecture": {
+      "model": "synchronous",
+      "build": "maven"
+    },
+    "infrastructure": {
+      "databaseEnabled": true,
+      "database": "postgresql",
+      "cacheEnabled": true,
+      "cache": "redis"
+    }
+  },
+
+  "midPanel": {
+    "selectedFeatures": [
+      "email-password-login",
+      "phone-sms-login",
+      "magic-links",
+      "social-login",
+      "webauthn",
+      "api-key-auth",
+      "jwt-tokens",
+      "token-rotation",
+      "token-family-tracking",
+      "refresh-token-reuse-detection",
+      "token-binding",
+      "token-scopes",
+      "totp",
+      "backup-codes",
+      "sms-codes",
+      "email-codes",
+      "push-notifications",
+      "hardware-tokens",
+      "mfa-grace-period",
+      "email-verification",
+      "phone-verification",
+      "invite-only-registration",
+      "registration-approval-workflow",
+      "password-history",
+      "password-policies",
+      "password-expiration",
+      "force-password-change",
+      "password-blacklist",
+      "rbac",
+      "hierarchical-roles",
+      "temporal-permissions",
+      "permission-delegation",
+      "group-based-permissions",
+      "time-based-access",
+      "abac",
+      "tag-based-permissions",
+      "permission-caching",
+      "audit-logging",
+      "rate-limiting",
+      "account-lockout",
+      "login-history",
+      "failed-login-tracking",
+      "login-notifications",
+      "ip-whitelisting",
+      "device-fingerprinting",
+      "trusted-devices",
+      "suspicious-activity",
+      "brute-force-detection",
+      "geolocation-tracking",
+      "user-agent-parsing",
+      "session-hijacking-detection",
+      "user-profile-crud",
+      "account-deletion",
+      "account-suspension",
+      "account-recovery",
+      "logout",
+      "token-blacklist",
+      "session-management",
+      "sliding-sessions",
+      "concurrent-session-limits",
+      "remember-me",
+      "user-preferences",
+      "user-metadata",
+      "email-change-workflow",
+      "phone-change-workflow",
+      "system-configuration",
+      "user-impersonation",
+      "role-templates",
+      "oauth2",
+      "oauth2-scopes",
+      "token-revocation",
+      "pkce-support",
+      "device-flow",
+      "consent-management",
+      "multi-tenancy",
+      "tenant-provisioning",
+      "tenant-quotas",
+      "tenant-feature-flags",
+      "tenant-invite-codes",
+      "tenant-branding",
+      "webhooks-outgoing",
+      "webhooks-incoming",
+      "gdpr",
+      "data-export",
+      "tos-tracking",
+      "privacy-controls",
+      "data-retention-policies",
+      "custom-validation-rules",
+      "key-rotation",
+      "sso-enterprise",
+      "directory-sync",
+      "service-accounts"
+    ]
+  },
+
+  "diagram": {
+
+    "database": {
+      "type": "postgresql",
+      "tables": [
+
+        {
+          "name": "users",
+          "fields": [
+            { "name": "id",                       "type": "BIGINT",       "primaryKey": true, "autoIncrement": true, "nullable": false },
+            { "name": "email",                    "type": "VARCHAR",      "size": 255,  "unique": true,  "nullable": true,  "index": { "type": "BTREE", "unique": true } },
+            { "name": "phone",                    "type": "VARCHAR",      "size": 20,   "unique": true,  "nullable": true },
+            { "name": "password_hash",            "type": "VARCHAR",      "size": 255,  "nullable": true },
+            { "name": "hash_algorithm",           "type": "VARCHAR",      "size": 20,   "nullable": true,  "default": "bcrypt" },
+            { "name": "email_verified",           "type": "BOOLEAN",      "nullable": false, "default": false },
+            { "name": "phone_verified",           "type": "BOOLEAN",      "nullable": false, "default": false },
+            { "name": "email_verification_token", "type": "VARCHAR",      "size": 255,  "nullable": true },
+            { "name": "phone_verification_code",  "type": "VARCHAR",      "size": 10,   "nullable": true },
+            { "name": "failed_login_attempts",    "type": "INT",          "nullable": false, "default": 0 },
+            { "name": "account_locked_until",     "type": "TIMESTAMP",    "nullable": true },
+            { "name": "lockout_until",            "type": "TIMESTAMP",    "nullable": true },
+            { "name": "locked_at",                "type": "TIMESTAMP",    "nullable": true },
+            { "name": "force_password_change",    "type": "BOOLEAN",      "nullable": false, "default": false },
+            { "name": "password_expires_at",      "type": "TIMESTAMP",    "nullable": true },
+            { "name": "password_changed_at",      "type": "TIMESTAMP",    "nullable": true },
+            { "name": "mfa_grace_until",          "type": "TIMESTAMP",    "nullable": true },
+            { "name": "mfa_grace_enabled",        "type": "BOOLEAN",      "nullable": false, "default": false },
+            { "name": "approval_status",          "type": "VARCHAR",      "size": 20,   "nullable": true,  "default": "pending" },
+            { "name": "approved_by",              "type": "BIGINT",       "nullable": true,  "foreignKey": { "table": "users", "column": "id", "onDelete": "SET NULL" } },
+            { "name": "deleted_at",               "type": "TIMESTAMP",    "nullable": true },
+            { "name": "deletion_reason",          "type": "TEXT",         "nullable": true },
+            { "name": "suspended_at",             "type": "TIMESTAMP",    "nullable": true },
+            { "name": "suspended_until",          "type": "TIMESTAMP",    "nullable": true },
+            { "name": "suspension_reason",        "type": "TEXT",         "nullable": true },
+            { "name": "tenant_id",                "type": "BIGINT",       "nullable": true,  "foreignKey": { "table": "tenants", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "created_at",               "type": "TIMESTAMP",    "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "updated_at",               "type": "TIMESTAMP",    "nullable": true }
+          ]
+        },
+
+        {
+          "name": "user_profiles",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",   "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",     "type": "BIGINT",   "nullable": false, "unique": true, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "first_name",  "type": "VARCHAR",  "size": 100, "nullable": true },
+            { "name": "last_name",   "type": "VARCHAR",  "size": 100, "nullable": true },
+            { "name": "avatar_url",  "type": "TEXT",     "nullable": true },
+            { "name": "bio",         "type": "TEXT",     "nullable": true },
+            { "name": "website",     "type": "VARCHAR",  "size": 255, "nullable": true },
+            { "name": "location",    "type": "VARCHAR",  "size": 255, "nullable": true },
+            { "name": "birth_date",  "type": "DATE",     "nullable": true },
+            { "name": "gender",      "type": "VARCHAR",  "size": 20,  "nullable": true },
+            { "name": "updated_at",  "type": "TIMESTAMP","nullable": true }
+          ]
+        },
+
+        {
+          "name": "social_accounts",
+          "fields": [
+            { "name": "id",                 "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",            "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "provider",           "type": "VARCHAR",   "size": 50,  "nullable": false },
+            { "name": "provider_user_id",   "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "access_token",       "type": "TEXT",      "nullable": true },
+            { "name": "refresh_token",      "type": "TEXT",      "nullable": true },
+            { "name": "token_expires_at",   "type": "TIMESTAMP", "nullable": true },
+            { "name": "provider_email",     "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "provider_name",      "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "avatar_url",         "type": "TEXT",      "nullable": true },
+            { "name": "connected_at",       "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+          ]
+        },
+
+        {
+          "name": "magic_links",
+          "fields": [
+            { "name": "id",         "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "token",      "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "user_id",    "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "expires_at", "type": "TIMESTAMP", "nullable": false },
+            { "name": "used_at",    "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "api_keys",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "key_hash",     "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "user_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "name",         "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "last_used_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "expires_at",   "type": "TIMESTAMP", "nullable": true },
+            { "name": "scopes",       "type": "TEXT",      "nullable": true },
+            { "name": "ip_whitelist", "type": "TEXT",      "nullable": true }
+          ]
+        },
+
+        {
+          "name": "webauthn_credentials",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "credential_id", "type": "TEXT",      "nullable": false, "unique": true },
+            { "name": "public_key",    "type": "TEXT",      "nullable": false },
+            { "name": "aaguid",        "type": "VARCHAR",   "size": 36,  "nullable": true },
+            { "name": "sign_count",    "type": "BIGINT",    "nullable": false, "default": 0 },
+            { "name": "device_name",   "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "last_used_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "created_at",    "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+          ]
+        },
+
+        {
+          "name": "refresh_tokens",
+          "fields": [
+            { "name": "id",                   "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "token_hash",           "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true, "index": { "type": "BTREE", "unique": true } },
+            { "name": "user_id",              "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "expires_at",           "type": "TIMESTAMP", "nullable": false },
+            { "name": "created_at",           "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "last_used_at",         "type": "TIMESTAMP", "nullable": true },
+            { "name": "ip_address",           "type": "VARCHAR",   "size": 45,  "nullable": true },
+            { "name": "rotated_at",           "type": "TIMESTAMP", "nullable": true },
+            { "name": "family_id",            "type": "VARCHAR",   "size": 36,  "nullable": true },
+            { "name": "family_counter",       "type": "INT",       "nullable": false, "default": 0 },
+            { "name": "used_at",              "type": "TIMESTAMP", "nullable": true },
+            { "name": "reuse_detected_at",    "type": "TIMESTAMP", "nullable": true },
+            { "name": "binding_key",          "type": "TEXT",      "nullable": true },
+            { "name": "binding_type",         "type": "VARCHAR",   "size": 50,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "sessions",
+          "fields": [
+            { "name": "id",                   "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",              "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "created_at",           "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "expires_at",           "type": "TIMESTAMP", "nullable": false },
+            { "name": "is_active",            "type": "BOOLEAN",   "nullable": false, "default": true },
+            { "name": "ip_address",           "type": "VARCHAR",   "size": 45,  "nullable": true },
+            { "name": "user_agent",           "type": "TEXT",      "nullable": true },
+            { "name": "last_activity_at",     "type": "TIMESTAMP", "nullable": true },
+            { "name": "device_id",            "type": "BIGINT",    "nullable": true },
+            { "name": "invalidated_at",       "type": "TIMESTAMP", "nullable": true },
+            { "name": "logged_out_at",        "type": "TIMESTAMP", "nullable": true },
+            { "name": "session_order",        "type": "INT",       "nullable": true },
+            { "name": "initial_fingerprint",  "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "current_fingerprint",  "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "hijack_detected_at",   "type": "TIMESTAMP", "nullable": true },
+            { "name": "tenant_id",            "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "tenants", "column": "id" } }
+          ]
+        },
+
+        {
+          "name": "blacklisted_tokens",
+          "fields": [
+            { "name": "id",              "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "token_hash",      "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true, "index": { "type": "BTREE", "unique": true } },
+            { "name": "blacklisted_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "user_id",         "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "users", "column": "id", "onDelete": "SET NULL" } },
+            { "name": "expires_at",      "type": "TIMESTAMP", "nullable": true },
+            { "name": "reason",          "type": "VARCHAR",   "size": 255, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "remember_tokens",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "token_hash",   "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "expires_at",   "type": "TIMESTAMP", "nullable": false },
+            { "name": "created_at",   "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "last_used_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "ip_address",   "type": "VARCHAR",   "size": 45,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "totp_secrets",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",      "type": "BIGINT",    "nullable": false, "unique": true, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "secret",       "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "enabled",      "type": "BOOLEAN",   "nullable": false, "default": false },
+            { "name": "confirmed_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "last_used_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "device_name",  "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "algorithm",    "type": "VARCHAR",   "size": 10,  "nullable": true, "default": "SHA1" }
+          ]
+        },
+
+        {
+          "name": "backup_codes",
+          "fields": [
+            { "name": "id",        "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",   "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "code_hash", "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "used",      "type": "BOOLEAN",   "nullable": false, "default": false },
+            { "name": "used_at",   "type": "TIMESTAMP", "nullable": true },
+            { "name": "created_at","type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+          ]
+        },
+
+        {
+          "name": "push_devices",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "device_token", "type": "TEXT",      "nullable": false },
+            { "name": "platform",     "type": "VARCHAR",   "size": 20,  "nullable": true },
+            { "name": "device_name",  "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "last_used_at", "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "hardware_tokens",
+          "fields": [
+            { "name": "id",             "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",        "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "serial_number",  "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "token_type",     "type": "VARCHAR",   "size": 50,  "nullable": false },
+            { "name": "counter",        "type": "BIGINT",    "nullable": true },
+            { "name": "last_used_at",   "type": "TIMESTAMP", "nullable": true },
+            { "name": "registered_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "revoked_at",     "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "password_history",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "password_hash", "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "created_at",    "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "algorithm",     "type": "VARCHAR",   "size": 20,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "password_policies",
+          "fields": [
+            { "name": "id",               "type": "BIGINT",  "primaryKey": true, "autoIncrement": true },
+            { "name": "min_length",        "type": "INT",     "nullable": false, "default": 8 },
+            { "name": "require_uppercase", "type": "BOOLEAN", "nullable": false, "default": true },
+            { "name": "require_lowercase", "type": "BOOLEAN", "nullable": false, "default": true },
+            { "name": "require_digits",    "type": "BOOLEAN", "nullable": false, "default": true },
+            { "name": "require_special",   "type": "BOOLEAN", "nullable": false, "default": false },
+            { "name": "max_length",        "type": "INT",     "nullable": true },
+            { "name": "max_age_days",      "type": "INT",     "nullable": true },
+            { "name": "history_count",     "type": "INT",     "nullable": true, "default": 5 }
+          ]
+        },
+
+        {
+          "name": "blacklisted_passwords",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "password_hash", "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "added_at",      "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "source",        "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "added_by",      "type": "BIGINT",    "nullable": true }
+          ]
+        },
+
+        {
+          "name": "invitations",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "token",       "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "email",       "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "invited_by",  "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "expires_at",  "type": "TIMESTAMP", "nullable": false },
+            { "name": "used_at",     "type": "TIMESTAMP", "nullable": true },
+            { "name": "used_by",     "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "role_id",     "type": "BIGINT",    "nullable": true },
+            { "name": "max_uses",    "type": "INT",       "nullable": true, "default": 1 }
+          ]
+        },
+
+        {
+          "name": "roles",
+          "fields": [
+            { "name": "id",             "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "name",           "type": "VARCHAR",   "size": 100, "nullable": false, "unique": true },
+            { "name": "description",    "type": "TEXT",      "nullable": true },
+            { "name": "is_system",      "type": "BOOLEAN",   "nullable": false, "default": false },
+            { "name": "parent_role_id", "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "roles", "column": "id", "onDelete": "SET NULL" } },
+            { "name": "created_at",     "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "updated_at",     "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "permissions",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "name",        "type": "VARCHAR",   "size": 100, "nullable": false, "unique": true },
+            { "name": "resource",    "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "action",      "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "description", "type": "TEXT",      "nullable": true },
+            { "name": "created_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+          ]
+        },
+
+        {
+          "name": "user_roles",
+          "fields": [
+            { "name": "id",                 "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",            "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "role_id",            "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "roles", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "assigned_at",        "type": "TIMESTAMP", "nullable": true, "default": "CURRENT_TIMESTAMP" },
+            { "name": "assigned_by",        "type": "BIGINT",    "nullable": true },
+            { "name": "expires_at",         "type": "TIMESTAMP", "nullable": true },
+            { "name": "access_start_time",  "type": "TIME",      "nullable": true },
+            { "name": "access_end_time",    "type": "TIME",      "nullable": true },
+            { "name": "allowed_days",       "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "timezone",           "type": "VARCHAR",   "size": 50,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "role_permissions",
+          "fields": [
+            { "name": "id",                   "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "role_id",              "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "roles", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "permission_id",        "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "permissions", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "created_at",           "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "created_by",           "type": "BIGINT",    "nullable": true },
+            { "name": "conditions",           "type": "TEXT",      "nullable": true },
+            { "name": "valid_from",           "type": "TIMESTAMP", "nullable": true },
+            { "name": "valid_until",          "type": "TIMESTAMP", "nullable": true },
+            { "name": "condition_expression", "type": "TEXT",      "nullable": true },
+            { "name": "condition_type",       "type": "VARCHAR",   "size": 50, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "delegations",
+          "fields": [
+            { "name": "id",                "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "delegator_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "delegatee_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "permission_id",     "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "permissions", "column": "id" } },
+            { "name": "expires_at",        "type": "TIMESTAMP", "nullable": false },
+            { "name": "valid_from",        "type": "TIMESTAMP", "nullable": true },
+            { "name": "revoked_at",        "type": "TIMESTAMP", "nullable": true },
+            { "name": "delegation_reason", "type": "TEXT",      "nullable": true },
+            { "name": "created_at",        "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" }
+          ]
+        },
+
+        {
+          "name": "groups",
+          "fields": [
+            { "name": "id",              "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "name",            "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "description",     "type": "TEXT",      "nullable": true },
+            { "name": "created_by",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "parent_group_id", "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "groups", "column": "id" } },
+            { "name": "created_at",      "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "updated_at",      "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "group_members",
+          "fields": [
+            { "name": "id",        "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "group_id",  "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "groups", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "user_id",   "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "joined_at", "type": "TIMESTAMP", "nullable": true, "default": "CURRENT_TIMESTAMP" },
+            { "name": "role",      "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "added_by",  "type": "BIGINT",    "nullable": true }
+          ]
+        },
+
+        {
+          "name": "group_roles",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "group_id",    "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "groups", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "role_id",     "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "roles", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "assigned_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "assigned_by", "type": "BIGINT",    "nullable": true },
+            { "name": "expires_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "conditions",  "type": "TEXT",      "nullable": true }
+          ]
+        },
+
+        {
+          "name": "audit_logs",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "users", "column": "id", "onDelete": "SET NULL" } },
+            { "name": "action",        "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "resource_type", "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "timestamp",     "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "resource_id",   "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "ip_address",    "type": "VARCHAR",   "size": 45,  "nullable": true },
+            { "name": "user_agent",    "type": "TEXT",      "nullable": true },
+            { "name": "old_value",     "type": "TEXT",      "nullable": true },
+            { "name": "new_value",     "type": "TEXT",      "nullable": true },
+            { "name": "metadata",      "type": "TEXT",      "nullable": true },
+            { "name": "tenant_id",     "type": "BIGINT",    "nullable": true }
+          ]
+        },
+
+        {
+          "name": "login_history",
+          "fields": [
+            { "name": "id",              "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",         "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "ip_address",      "type": "VARCHAR",   "size": 45,  "nullable": false },
+            { "name": "created_at",      "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "user_agent",      "type": "TEXT",      "nullable": true },
+            { "name": "device_type",     "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "location_country","type": "VARCHAR",   "size": 2,   "nullable": true },
+            { "name": "location_city",   "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "success",         "type": "BOOLEAN",   "nullable": false, "default": true },
+            { "name": "failure_reason",  "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "attempt_type",    "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "failure_code",    "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "blocked_by",      "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "country_code",    "type": "VARCHAR",   "size": 2,   "nullable": true },
+            { "name": "region",          "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "city",            "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "coordinates",     "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "browser",         "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "os",              "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "device_model",    "type": "VARCHAR",   "size": 100, "nullable": true },
+            { "name": "is_mobile",       "type": "BOOLEAN",   "nullable": true }
+          ]
+        },
+
+        {
+          "name": "ip_rules",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "ip_address",  "type": "VARCHAR",   "size": 45,  "nullable": false },
+            { "name": "rule_type",   "type": "VARCHAR",   "size": 20,  "nullable": false, "comment": "whitelist | blacklist" },
+            { "name": "created_by",  "type": "BIGINT",    "nullable": false },
+            { "name": "description", "type": "TEXT",      "nullable": true },
+            { "name": "expires_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "created_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "user_id",     "type": "BIGINT",    "nullable": true }
+          ]
+        },
+
+        {
+          "name": "device_fingerprints",
+          "fields": [
+            { "name": "id",               "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",          "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "fingerprint_hash", "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "first_seen_at",    "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "last_seen_at",     "type": "TIMESTAMP", "nullable": false },
+            { "name": "user_agent",       "type": "TEXT",      "nullable": true },
+            { "name": "screen_resolution","type": "VARCHAR",   "size": 20,  "nullable": true },
+            { "name": "timezone",         "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "language",         "type": "VARCHAR",   "size": 10,  "nullable": true },
+            { "name": "trust_score",      "type": "DECIMAL",   "nullable": true }
+          ]
+        },
+
+        {
+          "name": "trusted_devices",
+          "fields": [
+            { "name": "id",               "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",          "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "device_id",        "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "device_fingerprints", "column": "id" } },
+            { "name": "trusted_at",       "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "name",             "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "fingerprint_hash", "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "expires_at",       "type": "TIMESTAMP", "nullable": true },
+            { "name": "last_used_at",     "type": "TIMESTAMP", "nullable": true },
+            { "name": "revoked_at",       "type": "TIMESTAMP", "nullable": true },
+            { "name": "trust_token",      "type": "VARCHAR",   "size": 255, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "suspicious_events",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "event_type",   "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "risk_score",   "type": "DECIMAL",   "nullable": false },
+            { "name": "detected_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "status",       "type": "VARCHAR",   "size": 20,  "nullable": false, "default": "open" },
+            { "name": "ip_address",   "type": "VARCHAR",   "size": 45,  "nullable": true },
+            { "name": "details",      "type": "TEXT",      "nullable": true },
+            { "name": "resolved_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "resolved_by",  "type": "BIGINT",    "nullable": true },
+            { "name": "false_positive","type": "BOOLEAN",  "nullable": false, "default": false }
+          ]
+        },
+
+        {
+          "name": "brute_force_attempts",
+          "fields": [
+            { "name": "id",               "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "ip_address",       "type": "VARCHAR",   "size": 45,  "nullable": false },
+            { "name": "target",           "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "attempt_count",    "type": "INT",       "nullable": false, "default": 0 },
+            { "name": "window_start",     "type": "TIMESTAMP", "nullable": false },
+            { "name": "last_attempt_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "blocked_until",    "type": "TIMESTAMP", "nullable": true },
+            { "name": "user_id",          "type": "BIGINT",    "nullable": true },
+            { "name": "endpoint",         "type": "VARCHAR",   "size": 255, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "recovery_requests",
+          "fields": [
+            { "name": "id",               "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",          "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "token",            "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "created_at",       "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "expires_at",       "type": "TIMESTAMP", "nullable": false },
+            { "name": "ip_address",       "type": "VARCHAR",   "size": 45,  "nullable": true },
+            { "name": "recovery_method",  "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "completed_at",     "type": "TIMESTAMP", "nullable": true },
+            { "name": "cancelled_at",     "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "user_preferences",
+          "fields": [
+            { "name": "id",         "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",    "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "key",        "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "value",      "type": "TEXT",      "nullable": true },
+            { "name": "updated_at", "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "user_metadata",
+          "fields": [
+            { "name": "id",         "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",    "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "key",        "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "value",      "type": "TEXT",      "nullable": true },
+            { "name": "updated_at", "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "email_change_requests",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "new_email",     "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "token",         "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "expires_at",    "type": "TIMESTAMP", "nullable": false },
+            { "name": "requested_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "confirmed_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "ip_address",    "type": "VARCHAR",   "size": 45,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "phone_change_requests",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",      "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "new_phone",    "type": "VARCHAR",   "size": 20,  "nullable": false },
+            { "name": "code",         "type": "VARCHAR",   "size": 10,  "nullable": false },
+            { "name": "expires_at",   "type": "TIMESTAMP", "nullable": false },
+            { "name": "requested_at", "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "confirmed_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "ip_address",   "type": "VARCHAR",   "size": 45,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "system_config",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "key",         "type": "VARCHAR",   "size": 100, "nullable": false, "unique": true },
+            { "name": "value",       "type": "TEXT",      "nullable": false },
+            { "name": "updated_at",  "type": "TIMESTAMP", "nullable": false },
+            { "name": "description", "type": "TEXT",      "nullable": true },
+            { "name": "updated_by",  "type": "BIGINT",    "nullable": true },
+            { "name": "category",    "type": "VARCHAR",   "size": 50,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "impersonation_sessions",
+          "fields": [
+            { "name": "id",             "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "admin_id",       "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "target_user_id", "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "started_at",     "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "reason",         "type": "TEXT",      "nullable": false },
+            { "name": "ended_at",       "type": "TIMESTAMP", "nullable": true },
+            { "name": "ip_address",     "type": "VARCHAR",   "size": 45, "nullable": true },
+            { "name": "actions_taken",  "type": "TEXT",      "nullable": true },
+            { "name": "session_token",  "type": "VARCHAR",   "size": 255, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "role_templates",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "name",        "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "permissions", "type": "TEXT",      "nullable": false },
+            { "name": "created_by",  "type": "BIGINT",    "nullable": false },
+            { "name": "description", "type": "TEXT",      "nullable": true },
+            { "name": "created_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "updated_at",  "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "oauth_clients",
+          "fields": [
+            { "name": "id",                  "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "client_id",           "type": "VARCHAR",   "size": 100, "nullable": false, "unique": true },
+            { "name": "client_secret_hash",  "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "name",                "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "redirect_uris",       "type": "TEXT",      "nullable": false },
+            { "name": "grant_types",         "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "response_types",      "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "scope",               "type": "TEXT",      "nullable": false },
+            { "name": "created_at",          "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "is_confidential",     "type": "BOOLEAN",   "nullable": false, "default": true },
+            { "name": "is_active",           "type": "BOOLEAN",   "nullable": false, "default": true },
+            { "name": "previous_secret_hash","type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "secret_rotated_at",   "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "oauth_authorization_codes",
+          "fields": [
+            { "name": "id",                     "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "code",                   "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "client_id",              "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "user_id",                "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "redirect_uri",           "type": "TEXT",      "nullable": false },
+            { "name": "expires_at",             "type": "TIMESTAMP", "nullable": false },
+            { "name": "scope",                  "type": "TEXT",      "nullable": true },
+            { "name": "code_challenge",         "type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "code_challenge_method",  "type": "VARCHAR",   "size": 10,  "nullable": true },
+            { "name": "used_at",                "type": "TIMESTAMP", "nullable": true },
+            { "name": "expired_at",             "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "oauth_access_tokens",
+          "fields": [
+            { "name": "id",                "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "token_hash",        "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "client_id",         "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "user_id",           "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "expires_at",        "type": "TIMESTAMP", "nullable": false },
+            { "name": "scope",             "type": "TEXT",      "nullable": true },
+            { "name": "created_at",        "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "revoked_at",        "type": "TIMESTAMP", "nullable": true },
+            { "name": "refresh_token_hash","type": "VARCHAR",   "size": 255, "nullable": true },
+            { "name": "token_type",        "type": "VARCHAR",   "size": 20,  "nullable": true, "default": "Bearer" }
+          ]
+        },
+
+        {
+          "name": "oauth_scopes",
+          "fields": [
+            { "name": "id",               "type": "BIGINT",   "primaryKey": true, "autoIncrement": true },
+            { "name": "name",             "type": "VARCHAR",  "size": 100, "nullable": false, "unique": true },
+            { "name": "description",      "type": "TEXT",     "nullable": false },
+            { "name": "is_default",       "type": "BOOLEAN",  "nullable": false, "default": false },
+            { "name": "requires_consent", "type": "BOOLEAN",  "nullable": false, "default": true }
+          ]
+        },
+
+        {
+          "name": "user_consents",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",     "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "client_id",   "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "scope",       "type": "TEXT",      "nullable": false },
+            { "name": "granted_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "expires_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "revoked_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "ip_address",  "type": "VARCHAR",   "size": 45, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "device_codes",
+          "fields": [
+            { "name": "id",             "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "device_code",    "type": "VARCHAR",   "size": 255, "nullable": false, "unique": true },
+            { "name": "user_code",      "type": "VARCHAR",   "size": 10,  "nullable": false, "unique": true },
+            { "name": "client_id",      "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "expires_at",     "type": "TIMESTAMP", "nullable": false },
+            { "name": "status",         "type": "VARCHAR",   "size": 20,  "nullable": false, "default": "pending" },
+            { "name": "user_id",        "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "scope",          "type": "TEXT",      "nullable": true },
+            { "name": "interval",       "type": "INT",       "nullable": true, "default": 5 },
+            { "name": "last_polled_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "created_at",     "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "authorized_at",  "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "tenants",
+          "fields": [
+            { "name": "id",                   "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "name",                 "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "slug",                 "type": "VARCHAR",   "size": 100, "nullable": true, "unique": true },
+            { "name": "plan",                 "type": "VARCHAR",   "size": 50,  "nullable": true, "default": "free" },
+            { "name": "status",               "type": "VARCHAR",   "size": 20,  "nullable": true, "default": "active" },
+            { "name": "created_at",           "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "owner_id",             "type": "BIGINT",    "nullable": true },
+            { "name": "provisioned_at",       "type": "TIMESTAMP", "nullable": true },
+            { "name": "provisioning_status",  "type": "VARCHAR",   "size": 20,  "nullable": true },
+            { "name": "max_users",            "type": "INT",       "nullable": true },
+            { "name": "max_api_calls",        "type": "BIGINT",    "nullable": true },
+            { "name": "max_storage_mb",       "type": "INT",       "nullable": true },
+            { "name": "max_sessions",         "type": "INT",       "nullable": true },
+            { "name": "current_users",        "type": "INT",       "nullable": false, "default": 0 }
+          ]
+        },
+
+        {
+          "name": "tenant_features",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",  "primaryKey": true, "autoIncrement": true },
+            { "name": "tenant_id",   "type": "BIGINT",  "nullable": false, "foreignKey": { "table": "tenants", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "feature_key", "type": "VARCHAR", "size": 100, "nullable": false },
+            { "name": "enabled",     "type": "BOOLEAN", "nullable": false, "default": true },
+            { "name": "config",      "type": "TEXT",    "nullable": true }
+          ]
+        },
+
+        {
+          "name": "tenant_invites",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "tenant_id",   "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "tenants", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "code",        "type": "VARCHAR",   "size": 50,  "nullable": false, "unique": true },
+            { "name": "created_by",  "type": "BIGINT",    "nullable": false },
+            { "name": "expires_at",  "type": "TIMESTAMP", "nullable": false },
+            { "name": "max_uses",    "type": "INT",       "nullable": true, "default": 1 },
+            { "name": "used_count",  "type": "INT",       "nullable": false, "default": 0 },
+            { "name": "role_id",     "type": "BIGINT",    "nullable": true },
+            { "name": "created_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "email",       "type": "VARCHAR",   "size": 255, "nullable": true }
+          ]
+        },
+
+        {
+          "name": "tenant_branding",
+          "fields": [
+            { "name": "id",              "type": "BIGINT",   "primaryKey": true, "autoIncrement": true },
+            { "name": "tenant_id",       "type": "BIGINT",   "nullable": false, "unique": true, "foreignKey": { "table": "tenants", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "primary_color",   "type": "VARCHAR",  "size": 7,   "nullable": false, "default": "#7b3ff2" },
+            { "name": "logo_url",        "type": "TEXT",     "nullable": true },
+            { "name": "favicon_url",     "type": "TEXT",     "nullable": true },
+            { "name": "company_name",    "type": "VARCHAR",  "size": 100, "nullable": false },
+            { "name": "secondary_color", "type": "VARCHAR",  "size": 7,   "nullable": true },
+            { "name": "font_family",     "type": "VARCHAR",  "size": 100, "nullable": true },
+            { "name": "custom_css",      "type": "TEXT",     "nullable": true },
+            { "name": "updated_at",      "type": "TIMESTAMP","nullable": true }
+          ]
+        },
+
+        {
+          "name": "webhook_endpoints",
+          "fields": [
+            { "name": "id",                "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "url",               "type": "TEXT",      "nullable": false },
+            { "name": "events",            "type": "TEXT",      "nullable": false },
+            { "name": "secret",            "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "created_at",        "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "is_active",         "type": "BOOLEAN",   "nullable": false, "default": true },
+            { "name": "description",       "type": "TEXT",      "nullable": true },
+            { "name": "retry_count",       "type": "INT",       "nullable": false, "default": 3 },
+            { "name": "last_triggered_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "failure_count",     "type": "INT",       "nullable": false, "default": 0 }
+          ]
+        },
+
+        {
+          "name": "webhook_logs",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "source",       "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "event_type",   "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "payload",      "type": "TEXT",      "nullable": false },
+            { "name": "received_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "status",       "type": "VARCHAR",   "size": 20,  "nullable": true },
+            { "name": "processed_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "error",        "type": "TEXT",      "nullable": true },
+            { "name": "ip_address",   "type": "VARCHAR",   "size": 45,  "nullable": true }
+          ]
+        },
+
+        {
+          "name": "gdpr_requests",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "request_type",  "type": "VARCHAR",   "size": 50,  "nullable": false, "comment": "erasure | export | rectification | restriction" },
+            { "name": "created_at",    "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "status",        "type": "VARCHAR",   "size": 20,  "nullable": true, "default": "pending" },
+            { "name": "completed_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "notes",         "type": "TEXT",      "nullable": true }
+          ]
+        },
+
+        {
+          "name": "data_export_jobs",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "status",        "type": "VARCHAR",   "size": 20,  "nullable": false, "default": "pending" },
+            { "name": "requested_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "completed_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "file_url",      "type": "TEXT",      "nullable": true },
+            { "name": "expires_at",    "type": "TIMESTAMP", "nullable": true },
+            { "name": "format",        "type": "VARCHAR",   "size": 10,  "nullable": true, "default": "json" },
+            { "name": "notified_at",   "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "tos_acceptances",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",     "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "version",     "type": "VARCHAR",   "size": 20,  "nullable": false },
+            { "name": "accepted_at", "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "ip_address",  "type": "VARCHAR",   "size": 45,  "nullable": true },
+            { "name": "user_agent",  "type": "TEXT",      "nullable": true }
+          ]
+        },
+
+        {
+          "name": "privacy_settings",
+          "fields": [
+            { "name": "id",         "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "user_id",    "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id", "onDelete": "CASCADE" } },
+            { "name": "key",        "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "value",      "type": "TEXT",      "nullable": true },
+            { "name": "updated_at", "type": "TIMESTAMP", "nullable": true }
+          ]
+        },
+
+        {
+          "name": "data_retention_policies",
+          "fields": [
+            { "name": "id",             "type": "BIGINT",   "primaryKey": true, "autoIncrement": true },
+            { "name": "entity_type",    "type": "VARCHAR",  "size": 100, "nullable": false },
+            { "name": "retention_days", "type": "INT",      "nullable": false },
+            { "name": "action",         "type": "VARCHAR",  "size": 20,  "nullable": false, "comment": "delete | anonymize | archive" },
+            { "name": "description",    "type": "TEXT",     "nullable": true },
+            { "name": "created_at",     "type": "TIMESTAMP","nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "is_active",      "type": "BOOLEAN",  "nullable": false, "default": true }
+          ]
+        },
+
+        {
+          "name": "validation_rules",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",   "primaryKey": true, "autoIncrement": true },
+            { "name": "field_name",   "type": "VARCHAR",  "size": 100, "nullable": false },
+            { "name": "rule_type",    "type": "VARCHAR",  "size": 50,  "nullable": false },
+            { "name": "rule_value",   "type": "TEXT",     "nullable": false },
+            { "name": "error_message","type": "TEXT",     "nullable": true },
+            { "name": "is_active",    "type": "BOOLEAN",  "nullable": false, "default": true },
+            { "name": "created_at",   "type": "TIMESTAMP","nullable": false, "default": "CURRENT_TIMESTAMP" }
+          ]
+        },
+
+        {
+          "name": "encryption_keys",
+          "fields": [
+            { "name": "id",          "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "key_id",      "type": "VARCHAR",   "size": 36,  "nullable": false, "unique": true },
+            { "name": "algorithm",   "type": "VARCHAR",   "size": 20,  "nullable": false },
+            { "name": "created_at",  "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "expires_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "rotated_at",  "type": "TIMESTAMP", "nullable": true },
+            { "name": "status",      "type": "VARCHAR",   "size": 20,  "nullable": false, "default": "active" },
+            { "name": "key_version", "type": "INT",       "nullable": false, "default": 1 }
+          ]
+        },
+
+        {
+          "name": "sso_configurations",
+          "fields": [
+            { "name": "id",                "type": "BIGINT",   "primaryKey": true, "autoIncrement": true },
+            { "name": "provider_type",     "type": "VARCHAR",  "size": 20,  "nullable": false, "comment": "saml | oidc" },
+            { "name": "entity_id",         "type": "TEXT",     "nullable": false },
+            { "name": "sso_url",           "type": "TEXT",     "nullable": false },
+            { "name": "certificate",       "type": "TEXT",     "nullable": false },
+            { "name": "metadata_url",      "type": "TEXT",     "nullable": true },
+            { "name": "attribute_mapping", "type": "TEXT",     "nullable": true },
+            { "name": "created_at",        "type": "TIMESTAMP","nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "is_active",         "type": "BOOLEAN",  "nullable": false, "default": true }
+          ]
+        },
+
+        {
+          "name": "scim_resources",
+          "fields": [
+            { "name": "id",            "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "external_id",   "type": "VARCHAR",   "size": 255, "nullable": false },
+            { "name": "resource_type", "type": "VARCHAR",   "size": 20,  "nullable": false, "comment": "User | Group" },
+            { "name": "data",          "type": "TEXT",      "nullable": false },
+            { "name": "synced_at",     "type": "TIMESTAMP", "nullable": false },
+            { "name": "user_id",       "type": "BIGINT",    "nullable": true, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "sync_source",   "type": "VARCHAR",   "size": 50,  "nullable": true },
+            { "name": "last_modified", "type": "TIMESTAMP", "nullable": true },
+            { "name": "active",        "type": "BOOLEAN",   "nullable": false, "default": true }
+          ]
+        },
+
+        {
+          "name": "service_accounts",
+          "fields": [
+            { "name": "id",           "type": "BIGINT",    "primaryKey": true, "autoIncrement": true },
+            { "name": "name",         "type": "VARCHAR",   "size": 100, "nullable": false },
+            { "name": "client_id",    "type": "VARCHAR",   "size": 100, "nullable": false, "unique": true },
+            { "name": "created_by",   "type": "BIGINT",    "nullable": false, "foreignKey": { "table": "users", "column": "id" } },
+            { "name": "created_at",   "type": "TIMESTAMP", "nullable": false, "default": "CURRENT_TIMESTAMP" },
+            { "name": "description",  "type": "TEXT",      "nullable": true },
+            { "name": "permissions",  "type": "TEXT",      "nullable": true },
+            { "name": "last_used_at", "type": "TIMESTAMP", "nullable": true },
+            { "name": "expires_at",   "type": "TIMESTAMP", "nullable": true },
+            { "name": "is_active",    "type": "BOOLEAN",   "nullable": false, "default": true }
+          ]
+        }
+
+      ]
+    },
+
+    "cache": {
+      "type": "redis",
+      "settings": {
+        "maxMemory": "512mb",
+        "evictionPolicy": "allkeys-lru"
+      },
+      "keys": {
+        "redis": [
+          { "pattern": "session:{userId}",                "type": "String",     "ttl": 3600,  "expireStrategy": "sliding",    "serialization": "json" },
+          { "pattern": "permissions:user:{userId}",       "type": "Hash",       "ttl": 300,   "expireStrategy": "On Write" },
+          { "pattern": "roles:user:{userId}",             "type": "Hash",       "ttl": 300,   "expireStrategy": "On Write" },
+          { "pattern": "acl:{userId}:{resource}",         "type": "String",     "ttl": 120,   "expireStrategy": "On Write" },
+          { "pattern": "rate_limit:user:{userId}",        "type": "String",     "ttl": 60,    "expireStrategy": "On Write" },
+          { "pattern": "rate_limit:ip:{ip}",              "type": "String",     "ttl": 60,    "expireStrategy": "On Write" },
+          { "pattern": "rate_limit:endpoint:{path}",      "type": "String",     "ttl": 60,    "expireStrategy": "On Write" },
+          { "pattern": "ip:whitelist:{ip}",               "type": "String",     "ttl": null,  "pinned": true },
+          { "pattern": "ip:blacklist:{ip}",               "type": "String",     "ttl": 86400, "expireStrategy": "On Write" },
+          { "pattern": "blacklist:token:{hash}",          "type": "String",     "ttl": 86400, "expireStrategy": "On Write" },
+          { "pattern": "blacklist:user:{userId}",         "type": "Set",        "ttl": 86400 },
+          { "pattern": "brute_force:ip:{ip}",             "type": "String",     "ttl": 900,   "expireStrategy": "On Write" },
+          { "pattern": "brute_force:user:{userId}",       "type": "String",     "ttl": 900,   "expireStrategy": "On Write" },
+          { "pattern": "brute_force:endpoint:{path}",     "type": "String",     "ttl": 900,   "expireStrategy": "On Write" },
+          { "pattern": "blacklist:password:{hash}",       "type": "Set",        "ttl": null,  "pinned": true },
+          { "pattern": "tenant:features:{tenantId}",      "type": "Hash",       "ttl": 300,   "expireStrategy": "On Write" },
+          { "pattern": "feature:{key}:tenant:{tenantId}", "type": "String",     "ttl": 300 }
+        ]
+      }
+    },
+
+    "features": {
+
+      "authentication": {
+        "email-password-login": {
+          "usedColumns": { "users": ["email", "password_hash", "hash_algorithm"] }
+        },
+        "phone-sms-login": {
+          "usedColumns": { "users": ["phone", "phone_verified"] }
+        },
+        "magic-links": {
+          "usedColumns": { "magic_links": ["token", "user_id", "expires_at", "used_at"] }
+        },
+        "social-login": {
+          "usedColumns": { "social_accounts": ["user_id", "provider", "provider_user_id", "access_token", "refresh_token", "token_expires_at", "provider_email"] }
+        },
+        "webauthn": {
+          "usedColumns": { "webauthn_credentials": ["user_id", "credential_id", "public_key", "sign_count", "device_name"] }
+        },
+        "api-key-auth": {
+          "usedColumns": { "api_keys": ["key_hash", "user_id", "name", "last_used_at", "expires_at", "scopes"] }
+        }
+      },
+
+      "token-system": {
+        "jwt-tokens": {
+          "usedColumns": { "refresh_tokens": ["token_hash", "user_id", "expires_at", "created_at", "ip_address"] },
+          "children": {
+            "token-rotation":                { "usedColumns": { "refresh_tokens": ["rotated_at"] } },
+            "token-family-tracking":         { "usedColumns": { "refresh_tokens": ["family_id", "family_counter"] } },
+            "refresh-token-reuse-detection": { "usedColumns": { "refresh_tokens": ["used_at", "reuse_detected_at"] } },
+            "token-binding":                 { "usedColumns": { "refresh_tokens": ["binding_key", "binding_type"] } }
+          }
+        },
+        "token-scopes": {
+          "usedColumns": {
+            "scopes":       ["name", "description", "resource", "action"],
+            "token_scopes": ["token_id", "scope_id"],
+            "user_scopes":  ["user_id", "scope_id"]
+          }
+        }
+      },
+
+      "mfa": {
+        "totp": {
+          "usedColumns": { "totp_secrets": ["user_id", "secret", "enabled", "confirmed_at", "algorithm"] },
+          "children": {
+            "mfa-grace-period": { "usedColumns": { "users": ["mfa_grace_until", "mfa_grace_enabled"] } }
+          }
+        },
+        "backup-codes": {
+          "usedColumns": { "backup_codes": ["user_id", "code_hash", "used", "used_at"] }
+        },
+        "push-notifications": {
+          "usedColumns": { "push_devices": ["user_id", "device_token", "platform", "device_name"] }
+        },
+        "hardware-tokens": {
+          "usedColumns": { "hardware_tokens": ["user_id", "serial_number", "token_type", "counter", "last_used_at"] }
+        }
+      },
+
+      "registration": {
+        "email-verification": {
+          "usedColumns": { "users": ["email_verified", "email_verification_token"] }
+        },
+        "phone-verification": {
+          "usedColumns": { "users": ["phone_verified", "phone_verification_code"] }
+        },
+        "invite-only-registration": {
+          "usedColumns": { "invitations": ["token", "email", "invited_by", "expires_at", "used_at", "max_uses"] }
+        },
+        "registration-approval-workflow": {
+          "usedColumns": { "users": ["approval_status", "approved_by"] }
+        }
+      },
+
+      "password-management": {
+        "password-history": {
+          "usedColumns": { "password_history": ["user_id", "password_hash", "created_at", "algorithm"] }
+        },
+        "password-policies": {
+          "usedColumns": { "password_policies": ["min_length", "require_uppercase", "require_lowercase", "require_digits", "require_special", "max_age_days", "history_count"] },
+          "children": {
+            "password-expiration":   { "usedColumns": { "users": ["password_expires_at", "password_changed_at"] } },
+            "force-password-change": { "usedColumns": { "users": ["force_password_change"] } }
+          }
+        },
+        "password-blacklist": {
+          "usedColumns":    { "blacklisted_passwords": ["password_hash", "added_at", "source"] },
+          "usedCacheKeys":  ["blacklist:password:{hash}"]
+        }
+      },
+
+      "authorization": {
+        "rbac": {
+          "usedColumns": {
+            "roles":            ["id", "name", "description", "is_system"],
+            "permissions":      ["id", "name", "resource", "action"],
+            "user_roles":       ["user_id", "role_id", "assigned_at", "expires_at"],
+            "role_permissions": ["role_id", "permission_id", "conditions"]
+          },
+          "children": {
+            "hierarchical-roles":  { "usedColumns": { "roles": ["parent_role_id"] } },
+            "temporal-permissions":{ "usedColumns": { "role_permissions": ["valid_from", "valid_until"] } },
+            "time-based-access":   { "usedColumns": { "user_roles": ["access_start_time", "access_end_time", "allowed_days", "timezone"] } }
+          }
+        },
+        "permission-delegation": {
+          "usedColumns": { "delegations": ["delegator_id", "delegatee_id", "permission_id", "expires_at", "valid_from", "revoked_at"] }
+        },
+        "group-based-permissions": {
+          "usedColumns": {
+            "groups":        ["id", "name", "description", "created_by", "parent_group_id"],
+            "group_members": ["group_id", "user_id", "joined_at", "role"],
+            "group_roles":   ["group_id", "role_id", "assigned_at", "expires_at"]
+          }
+        },
+        "abac": {
+          "usedColumns": {
+            "attributes":      ["id", "name", "type", "category"],
+            "policies":        ["id", "name", "effect", "priority"],
+            "attribute_values":["entity_id", "entity_type", "attribute_id", "value"],
+            "policy_rules":    ["policy_id", "condition", "action", "resource_type"]
+          },
+          "children": {
+            "tag-based-permissions": {
+              "usedColumns": {
+                "tags":             ["name", "category", "description"],
+                "resource_tags":    ["resource_id", "resource_type", "tag_id"],
+                "tag_permissions":  ["tag_id", "permission", "role_id"]
+              }
+            }
+          }
+        },
+        "permission-caching": {
+          "usedCacheKeys": ["permissions:user:{userId}", "roles:user:{userId}", "acl:{userId}:{resource}"]
+        }
+      },
+
+      "audit-security": {
+        "audit-logging": {
+          "usedColumns": { "audit_logs": ["user_id", "action", "resource_type", "timestamp", "ip_address", "old_value", "new_value"] }
+        },
+        "rate-limiting": {
+          "usedCacheKeys": ["rate_limit:user:{userId}", "rate_limit:ip:{ip}", "rate_limit:endpoint:{path}"]
+        },
+        "account-lockout": {
+          "usedColumns": { "users": ["lockout_until", "failed_login_attempts", "locked_at"] }
+        },
+        "login-history": {
+          "usedColumns": { "login_history": ["user_id", "ip_address", "created_at", "success", "failure_reason"] },
+          "children": {
+            "failed-login-tracking": { "usedColumns": { "login_history": ["attempt_type", "failure_code", "blocked_by"] } },
+            "geolocation-tracking":  { "usedColumns": { "login_history": ["country_code", "region", "city", "coordinates"] } },
+            "user-agent-parsing":    { "usedColumns": { "login_history": ["browser", "os", "device_model", "is_mobile"] } }
+          }
+        },
+        "ip-whitelisting": {
+          "usedColumns":   { "ip_rules": ["ip_address", "rule_type", "created_by", "expires_at"] },
+          "usedCacheKeys": ["ip:whitelist:{ip}", "ip:blacklist:{ip}"]
+        },
+        "device-fingerprinting": {
+          "usedColumns": { "device_fingerprints": ["user_id", "fingerprint_hash", "first_seen_at", "last_seen_at", "user_agent", "trust_score"] }
+        },
+        "trusted-devices": {
+          "usedColumns": { "trusted_devices": ["user_id", "device_id", "trusted_at", "name", "fingerprint_hash", "expires_at", "revoked_at"] }
+        },
+        "suspicious-activity": {
+          "usedColumns": { "suspicious_events": ["user_id", "event_type", "risk_score", "detected_at", "status", "ip_address"] }
+        },
+        "brute-force-detection": {
+          "usedColumns":   { "brute_force_attempts": ["ip_address", "target", "attempt_count", "window_start", "blocked_until"] },
+          "usedCacheKeys": ["brute_force:ip:{ip}", "brute_force:user:{userId}", "brute_force:endpoint:{path}"]
+        },
+        "session-hijacking-detection": {
+          "usedColumns": { "sessions": ["initial_fingerprint", "current_fingerprint", "hijack_detected_at"] }
+        }
+      },
+
+      "account-management": {
+        "user-profile-crud": {
+          "usedColumns": { "user_profiles": ["user_id", "first_name", "last_name", "avatar_url", "bio", "location"] },
+          "children": {
+            "account-deletion":  { "usedColumns": { "users": ["deleted_at", "deletion_reason"] } },
+            "account-suspension":{ "usedColumns": { "users": ["suspended_at", "suspended_until", "suspension_reason"] } }
+          }
+        },
+        "account-recovery": {
+          "usedColumns": { "recovery_requests": ["user_id", "token", "created_at", "expires_at", "recovery_method"] }
+        },
+        "token-blacklist": {
+          "usedColumns":   { "blacklisted_tokens": ["token_hash", "blacklisted_at", "user_id", "expires_at", "reason"] },
+          "usedCacheKeys": ["blacklist:token:{hash}", "blacklist:user:{userId}"]
+        },
+        "session-management": {
+          "usedColumns": { "sessions": ["id", "user_id", "created_at", "expires_at", "is_active", "ip_address", "last_activity_at"] },
+          "children": {
+            "logout":                    { "usedColumns": { "sessions": ["logged_out_at"] } },
+            "sliding-sessions":          { "usedColumns": { "sessions": ["last_activity_at"] } },
+            "concurrent-session-limits": { "usedColumns": { "sessions": ["session_order"] } }
+          }
+        },
+        "remember-me": {
+          "usedColumns": { "remember_tokens": ["user_id", "token_hash", "expires_at", "last_used_at"] }
+        },
+        "user-preferences": {
+          "usedColumns": { "user_preferences": ["user_id", "key", "value"] }
+        },
+        "user-metadata": {
+          "usedColumns": { "user_metadata": ["user_id", "key", "value"] }
+        },
+        "email-change-workflow": {
+          "usedColumns": { "email_change_requests": ["user_id", "new_email", "token", "expires_at", "confirmed_at"] }
+        },
+        "phone-change-workflow": {
+          "usedColumns": { "phone_change_requests": ["user_id", "new_phone", "code", "expires_at", "confirmed_at"] }
+        }
+      },
+
+      "admin-panel": {
+        "system-configuration": {
+          "usedColumns": { "system_config": ["key", "value", "updated_at", "description", "category"] }
+        },
+        "user-impersonation": {
+          "usedColumns": { "impersonation_sessions": ["admin_id", "target_user_id", "started_at", "reason", "ended_at"] }
+        },
+        "role-templates": {
+          "usedColumns": { "role_templates": ["name", "permissions", "created_by", "description"] }
+        }
+      },
+
+      "oauth2-server": {
+        "oauth2": {
+          "usedColumns": {
+            "oauth_clients":            ["client_id", "client_secret_hash", "name", "redirect_uris", "grant_types", "scope", "is_confidential", "is_active"],
+            "oauth_authorization_codes":["code", "client_id", "user_id", "redirect_uri", "expires_at", "scope", "code_challenge", "code_challenge_method"],
+            "oauth_access_tokens":      ["token_hash", "client_id", "user_id", "expires_at", "scope", "revoked_at"]
+          },
+          "children": {
+            "token-revocation":  { "usedColumns": { "oauth_access_tokens":       ["revoked_at"] } },
+            "pkce-support":      { "usedColumns": { "oauth_authorization_codes": ["code_challenge", "code_challenge_method"] } },
+            "client-secret-rotation": { "usedColumns": { "oauth_clients": ["previous_secret_hash", "secret_rotated_at"] } }
+          }
+        },
+        "oauth2-scopes": {
+          "usedColumns": { "oauth_scopes": ["name", "description", "is_default", "requires_consent"] }
+        },
+        "device-flow": {
+          "usedColumns": { "device_codes": ["device_code", "user_code", "client_id", "expires_at", "status", "user_id", "scope", "interval"] }
+        },
+        "consent-management": {
+          "usedColumns": { "user_consents": ["user_id", "client_id", "scope", "granted_at", "revoked_at"] }
+        }
+      },
+
+      "multi-tenancy": {
+        "multi-tenancy": {
+          "usedColumns": { "tenants": ["id", "name", "slug", "plan", "status", "owner_id"] },
+          "children": {
+            "tenant-provisioning": { "usedColumns": { "tenants": ["provisioned_at", "provisioning_status"] } },
+            "tenant-quotas":       { "usedColumns": { "tenants": ["max_users", "max_api_calls", "max_storage_mb", "current_users"] } }
+          }
+        },
+        "tenant-feature-flags": {
+          "usedColumns":   { "tenant_features": ["tenant_id", "feature_key", "enabled", "config"] },
+          "usedCacheKeys": ["tenant:features:{tenantId}", "feature:{key}:tenant:{tenantId}"]
+        },
+        "tenant-invite-codes": {
+          "usedColumns": { "tenant_invites": ["tenant_id", "code", "created_by", "expires_at", "max_uses", "used_count", "role_id"] }
+        },
+        "tenant-branding": {
+          "usedColumns": { "tenant_branding": ["tenant_id", "primary_color", "logo_url", "company_name", "secondary_color"] }
+        }
+      },
+
+      "integrations": {
+        "webhooks-outgoing": {
+          "usedColumns": { "webhook_endpoints": ["url", "events", "secret", "is_active", "retry_count", "failure_count"] }
+        },
+        "webhooks-incoming": {
+          "usedColumns": { "webhook_logs": ["source", "event_type", "payload", "received_at", "status", "error"] }
+        }
+      },
+
+      "compliance": {
+        "gdpr": {
+          "usedColumns": { "gdpr_requests": ["user_id", "request_type", "created_at", "status", "completed_at"] }
+        },
+        "data-export": {
+          "usedColumns": { "data_export_jobs": ["user_id", "status", "requested_at", "file_url", "expires_at", "format"] }
+        },
+        "tos-tracking": {
+          "usedColumns": { "tos_acceptances": ["user_id", "version", "accepted_at", "ip_address"] }
+        },
+        "privacy-controls": {
+          "usedColumns": { "privacy_settings": ["user_id", "key", "value"] }
+        },
+        "data-retention-policies": {
+          "usedColumns": { "data_retention_policies": ["entity_type", "retention_days", "action", "is_active"] }
+        }
+      },
+
+      "validation": {
+        "custom-validation-rules": {
+          "usedColumns": { "validation_rules": ["field_name", "rule_type", "rule_value", "error_message", "is_active"] }
+        }
+      },
+
+      "enterprise": {
+        "key-rotation": {
+          "usedColumns": { "encryption_keys": ["key_id", "algorithm", "created_at", "expires_at", "status", "key_version"] }
+        },
+        "sso-enterprise": {
+          "usedColumns": { "sso_configurations": ["provider_type", "entity_id", "sso_url", "certificate", "attribute_mapping", "is_active"] }
+        },
+        "directory-sync": {
+          "usedColumns": { "scim_resources": ["external_id", "resource_type", "data", "synced_at", "user_id", "active"] }
+        },
+        "service-accounts": {
+          "usedColumns": { "service_accounts": ["name", "client_id", "created_by", "permissions", "expires_at", "is_active"] }
+        }
+      }
+
+    }
+  },
+
+  "externalServices": [
+    {
+      "id": "notifications-service",
+      "name": "Notifications",
+      "endpoints": [
+        "POST /notifications-service/send-sms",
+        "POST /notifications-service/verify-sms",
+        "POST /notifications-service/send-magic-link",
+        "POST /notifications-service/verify-magic-link",
+        "POST /notifications-service/send-password-reset",
+        "POST /notifications-service/verify-password-reset",
+        "POST /notifications-service/send-verification-email",
+        "POST /notifications-service/verify-email",
+        "POST /notifications-service/send-verification-sms",
+        "POST /notifications-service/verify-phone",
+        "POST /notifications-service/send-mfa-sms",
+        "POST /notifications-service/verify-mfa-sms",
+        "POST /notifications-service/send-mfa-email",
+        "POST /notifications-service/verify-mfa-email",
+        "POST /notifications-service/send-mfa-push",
+        "POST /notifications-service/verify-mfa-push",
+        "POST /notifications-service/send-login-notification",
+        "POST /notifications-service/send-approval-notification",
+        "POST /notifications-service/send-deletion-notification"
+      ]
+    },
+    {
+      "id": "oauth2-providers",
+      "name": "OAuth2",
+      "endpoints": [
+        "OAuth2 Authorization Code Flow (Google, Facebook, GitHub)"
+      ]
+    },
+    {
+      "id": "analytics-service",
+      "name": "Analytics",
+      "endpoints": [
+        "POST /analytics-service/track-event",
+        "POST /analytics-service/get-metrics"
+      ]
+    },
+    {
+      "id": "storage-service",
+      "name": "Storage",
+      "endpoints": [
+        "POST /storage-service/upload",
+        "POST /export-service/generate"
+      ]
+    }
+  ]
+}
